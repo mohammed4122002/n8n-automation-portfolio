@@ -1,0 +1,400 @@
+{
+  "name": "01 - Daily Gmail Digest to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 01 - Daily Gmail Digest to Telegram\nEvery day at 08:00 (Asia/Hebron) this reads unread Gmail emails from the last 24h (no Promotions/Social, max 20), summarizes them in Arabic with Gemini, and sends one digest to Telegram. If there are no emails, it sends a short notice instead. Long digests are split under Telegram's 4096-char limit.\n\n**Connect:** Gmail OAuth2, Google Gemini API, Telegram Bot API.\n**Set:** your chat ID in the \"Set Chat ID\" node.\nUse \"Test Manually\" to run it on demand.",
+        "height": 316,
+        "width": 512
+      },
+      "id": "53d21e32-fbb1-455e-be89-3e537b85a136",
+      "name": "About this workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "12e80fb1-0239-4d0a-b983-1f8b4694b353",
+      "name": "Every Day at 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -32,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "chatId",
+              "name": "chatId",
+              "value": "1801824418",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5cf363a6-c39a-4c05-ae74-ed116d3475b7",
+      "name": "Set Chat ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 20,
+        "simple": false,
+        "filters": {
+          "q": "newer_than:1d -category:promotions -category:social",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "a11629a2-0661-4a6f-ae5f-7caf8c8c3186",
+      "name": "Get Unread Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        448
+      ],
+      "alwaysOutputData": true,
+      "webhookId": "0f870a74-1647-40ee-a302-9d75f74e7469",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-id",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1b68f435-44e7-438b-9999-1de10e3cb43e",
+      "name": "Has New Emails?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function stripHtml(html) {\n  return String(html || \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \" \")\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \" \")\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<\\/p>/gi, \"\\n\")\n    .replace(/<[^>]+>/g, \" \")\n    .replace(/&nbsp;/g, \" \")\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\");\n}\n\nfunction stripQuoted(text) {\n  const lines = String(text || \"\").split(/\\r?\\n/);\n  const out = [];\n  for (const line of lines) {\n    const t = line.trim();\n    if (/^On .+wrote:?$/i.test(t) || /^-{2,}\\s*Original Message/i.test(t) || /^From:\\s.+/i.test(t) && out.length > 0 || /كتب:?$/.test(t) || /^_{5,}$/.test(t)) break;\n    if (t.startsWith(\">\")) continue;\n    out.push(line);\n  }\n  return out.join(\"\\n\");\n}\n\nconst emails = $input.all().filter(i => i.json && i.json.id);\nconst blocks = emails.map((item, idx) => {\n  const e = item.json;\n  const from = (e.from && (e.from.text || (e.from.value && e.from.value[0] && e.from.value[0].address))) || e.From || \"Unknown\";\n  const subject = e.subject || e.Subject || \"(no subject)\";\n  let body = e.text && String(e.text).trim() ? e.text : stripHtml(e.html || e.textAsHtml || \"\");\n  if (!body || !String(body).trim()) body = e.snippet || \"\";\n  body = stripQuoted(body).replace(/[ \\t]+/g, \" \").replace(/\\n{3,}/g, \"\\n\\n\").trim().slice(0, 800);\n  return (idx + 1) + \". From: \" + from + \"\\nSubject: \" + subject + \"\\nBody: \" + body;\n});\n\nreturn [{ json: { emailCount: emails.length, emailText: blocks.join(\"\\n\\n---\\n\\n\") } }];"
+      },
+      "id": "238f8e2d-0084-4bd5-9d63-ecfc57525e2b",
+      "name": "Clean Email Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize these {{ $json.emailCount }} emails:\n\n{{ $json.emailText }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a personal email assistant. Write in clear Arabic. Group the emails into: 🔴 عاجل (needs action today), 🟡 مهم (read soon), ⚪ عادي (informational). For each email give one line: sender — short summary — and the action required if any. Keep the whole message under 3500 characters. Do not invent information. Output plain text only (no Markdown, no HTML tags)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "0329449f-6377-4a83-8d72-7a7dde9938bc",
+      "name": "Summarize with AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1264,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const LIMIT = 4000;\nfunction esc(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\nconst summary = esc($input.first().json.text).trim();\nconst date = $now.setZone(\"Asia/Hebron\").toFormat(\"yyyy-MM-dd\");\nconst header = \"<b>📬 ملخص بريد اليوم</b>\\n\" + date + \"\\n\\n\";\nconst full = header + summary;\n\nconst chunks = [];\nif (full.length <= LIMIT) {\n  chunks.push(full);\n} else {\n  let current = header;\n  for (const line of summary.split(\"\\n\")) {\n    let piece = line;\n    while (piece.length > LIMIT) {\n      if (current.trim()) { chunks.push(current); current = \"\"; }\n      chunks.push(piece.slice(0, LIMIT));\n      piece = piece.slice(LIMIT);\n    }\n    if ((current + piece + \"\\n\").length > LIMIT) {\n      chunks.push(current);\n      current = \"\";\n    }\n    current += piece + \"\\n\";\n  }\n  if (current.trim()) chunks.push(current);\n}\n\nreturn chunks.map((message, i) => ({ json: { message: message.trim(), part: i + 1, totalParts: chunks.length } }));"
+      },
+      "id": "f78ca25f-28a6-4dc6-b8bd-a98bce269c02",
+      "name": "Format and Split Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Set Chat ID\").first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "a5235e90-fd22-4aff-836e-498825eba65e",
+      "name": "Send Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1840,
+        144
+      ],
+      "webhookId": "b0a583f2-e548-4b15-9be8-76e109104bbd",
+      "credentials": {
+        "telegramApi": {
+          "id": "f3hm4kwjqJtiHVjU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Set Chat ID\").first().json.chatId }}",
+        "text": "لا توجد رسائل جديدة اليوم ✅",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "2a90bed5-732e-4043-bbf0-97d7dcd03b9b",
+      "name": "Send No Emails Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        656
+      ],
+      "executeOnce": true,
+      "webhookId": "3c983f0d-c220-47d0-b183-250024a31b43",
+      "credentials": {
+        "telegramApi": {
+          "id": "f3hm4kwjqJtiHVjU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "bc9741d8-e994-41c0-9a30-5e865f929510",
+      "name": "Test Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        352
+      ],
+      "id": "fc8f9e01-1e8a-438e-bca5-8f2c4f02bae5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Day at 08:00": {
+      "main": [
+        [
+          {
+            "node": "Set Chat ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Chat ID": {
+      "main": [
+        [
+          {
+            "node": "Get Unread Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unread Emails": {
+      "main": [
+        [
+          {
+            "node": "Has New Emails?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Emails?": {
+      "main": [
+        [
+          {
+            "node": "Clean Email Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send No Emails Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Email Text": {
+      "main": [
+        [
+          {
+            "node": "Summarize with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize with AI": {
+      "main": [
+        [
+          {
+            "node": "Format and Split Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format and Split Message": {
+      "main": [
+        [
+          {
+            "node": "Send Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Manually": {
+      "main": [
+        [
+          {
+            "node": "Set Chat ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "a060f483-5193-4015-b54f-075f1e642e86",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ccfa59b24dd3fae3b33f2c97285c84d31489c0bd1fec8d57a2c82248ed0e917e"
+  },
+  "nodeGroups": [
+    {
+      "id": "96afe591-10ea-4788-98ea-15d3ae9cea3e",
+      "name": "Collect new emails",
+      "nodeIds": [
+        "5cf363a6-c39a-4c05-ae74-ed116d3475b7",
+        "a11629a2-0661-4a6f-ae5f-7caf8c8c3186",
+        "1b68f435-44e7-438b-9999-1de10e3cb43e"
+      ],
+      "description": "Pulls the last 24h of unread inbox mail (no promos/social) and checks whether anything new arrived"
+    },
+    {
+      "id": "d7c75c18-3ea1-4f9a-ac37-874e0308dae4",
+      "name": "Deliver Arabic digest",
+      "nodeIds": [
+        "238f8e2d-0084-4bd5-9d63-ecfc57525e2b",
+        "0329449f-6377-4a83-8d72-7a7dde9938bc",
+        "f78ca25f-28a6-4dc6-b8bd-a98bce269c02",
+        "a5235e90-fd22-4aff-836e-498825eba65e",
+        "fc8f9e01-1e8a-438e-bca5-8f2c4f02bae5"
+      ],
+      "description": "Trims each email, has AI sort them into urgent / important / normal in Arabic, then posts to your chat in 4096-char parts"
+    }
+  ],
+  "id": "jZ6Aef01Q9du3XqK",
+  "tags": []
+}

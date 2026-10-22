@@ -1,0 +1,1602 @@
+{
+  "name": "03 - Smart Gmail Attachment Filing",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 03 - Smart Gmail Attachment Filing\n**Flow:** Gmail (new email with attachments) -> Config -> split attachments -> filter by type/size -> extract text (PDF text / image vision) -> AI names and classifies -> build YYYY-MM-DD_company_docType_title.ext -> find or create YYYY-MM/docType folders in Drive -> upload (adds _2, _3 on duplicates) -> log to Google Sheets -> label email \"saved-to-drive\" -> Telegram summary.\n\n**Credentials:** Gmail OAuth2, Google Drive OAuth2, Google Sheets OAuth2, OpenAI API, Telegram Bot API.\n\n**Set up:** open the \"Config\" node and fill telegramChatId. Then pick the Drive root folder from the dropdown in \"Search Month Folder\" and \"Create Month Folder\", and the spreadsheet and sheet tab in \"Log File\". The log sheet needs headers: Date, Sender, Subject, Original Name, New Name, Type, Link.\n\n**Test:** run from \"Manual Trigger (Test)\" - it reads up to 3 recent emails matching the query.",
+        "height": 380,
+        "width": 640
+      },
+      "id": "f2820374-20c0-4c14-ae0c-2c1832767b00",
+      "name": "Flow Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment -label:saved-to-drive",
+          "readStatus": "both"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "id": "12d94549-4954-4bd5-9e54-a152a61eba4d",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -496,
+        592
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg3",
+              "name": "telegramChatId",
+              "value": "1801824418",
+              "type": "string"
+            },
+            {
+              "id": "cfg4",
+              "name": "allowedTypes",
+              "value": "={{ [\"pdf\", \"docx\", \"xlsx\", \"png\", \"jpg\"] }}",
+              "type": "array"
+            },
+            {
+              "id": "cfg5",
+              "name": "maxSizeMB",
+              "value": 20,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "stripBinary": false
+        }
+      },
+      "id": "661bdda0-e11a-479d-8179-fa7fcec8d530",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -208,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const j = items[i].json;\n  const bin = items[i].binary || {};\n  const from = (j.from && j.from.value && j.from.value[0]) || {};\n  const mimeToExt = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx' };\n  for (const key of Object.keys(bin)) {\n    const b = bin[key];\n    const buf = await this.helpers.getBinaryDataBuffer(i, key);\n    const name = b.fileName || key;\n    let ext = name.indexOf('.') >= 0 ? name.split('.').pop().toLowerCase() : '';\n    if (!ext) ext = mimeToExt[b.mimeType] || '';\n    if (ext === 'jpeg') ext = 'jpg';\n    out.push({\n      json: {\n        messageId: j.id,\n        senderName: from.name || '',\n        senderEmail: from.address || '',\n        subject: j.subject || '',\n        date: j.date || '',\n        originalName: name,\n        extension: ext,\n        mimeType: b.mimeType || '',\n        sizeBytes: buf.length,\n        isImage: ext === 'png' || ext === 'jpg',\n        telegramChatId: j.telegramChatId,\n        allowedTypes: j.allowedTypes,\n        maxSizeMB: j.maxSizeMB,\n      },\n      binary: { data: b },\n    });\n  }\n}\nreturn out;"
+      },
+      "id": "4bc3f048-58d7-4161-bd49-d5c308389f55",
+      "name": "Split Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ff1",
+              "leftValue": "={{ $json.allowedTypes.includes($json.extension) && $json.sizeBytes < $json.maxSizeMB * 1048576 && !($json.isImage && $json.sizeBytes < 20480) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dd3ccd28-c387-4095-b197-bbace2e1fc2a",
+      "name": "Filter Files",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((i) => i.json).filter((r) => r.ok);\nconst groups = {};\nfor (const r of rows) {\n  if (!groups[r.messageId]) {\n    groups[r.messageId] = { messageId: r.messageId, subject: r.subject, telegramChatId: r.telegramChatId, folderLink: r.folderLink, names: [] };\n  }\n  groups[r.messageId].names.push(r.finalName);\n}\nreturn Object.values(groups).map((g) => ({ json: { messageId: g.messageId, subject: g.subject, telegramChatId: g.telegramChatId, folderLink: g.folderLink, count: g.names.length, namesList: g.names.join('\\n') } }));"
+      },
+      "id": "9f9b530a-aa7d-437f-8f79-4740885ef0fc",
+      "name": "Summarize Per Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "id": "78abb458-6bbc-4707-abbd-f7a7bee43acc",
+      "name": "Get Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        128
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "webhookId": "17c3ab9a-70c0-4ed2-91a1-0016f8f35a9f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const hit = $input.all().find((i) => i.json.name === 'saved-to-drive');\nreturn [{ json: { labelId: hit ? hit.json.id : '' } }];"
+      },
+      "id": "77061bbe-6bdc-4c4b-9fea-a00927f28774",
+      "name": "Find Label",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "le1",
+              "leftValue": "={{ $json.labelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3c635895-950d-4bb4-82b0-3728c7543309",
+      "name": "Label Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = $input.first().json.id || $('Find Label').first().json.labelId;\nreturn $('Summarize Per Email').all().map((e) => ({ json: Object.assign({}, e.json, { labelId: id }) }));"
+      },
+      "id": "78a6268a-c132-4925-b67e-3363e67f9be2",
+      "name": "Label ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.messageId }}",
+        "labelIds": [
+          "={{ $json.labelId }}"
+        ]
+      },
+      "id": "94612224-4076-4574-9443-3eea36beb571",
+      "name": "Add Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2864,
+        128
+      ],
+      "webhookId": "58691ff9-cec2-4f3c-92ae-93ff6d92180b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Label ID').item.json.telegramChatId }}",
+        "text": "=Saved {{ $('Label ID').item.json.count }} file(s) from: {{ $('Label ID').item.json.subject }}\n{{ $('Label ID').item.json.namesList }}\nFolder: {{ $('Label ID').item.json.folderLink }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "f2619c35-233f-4450-bd68-211bafd83bc9",
+      "name": "Notify Me",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3088,
+        128
+      ],
+      "webhookId": "aa2c2e6e-45b3-4730-b680-ce2e1275a7d3",
+      "credentials": {
+        "telegramApi": {
+          "id": "HE81pa4qMPkZ07Uw",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "saved-to-drive",
+        "options": {}
+      },
+      "id": "e761bcb0-8d3f-4a67-b212-15230f002167",
+      "name": "Create Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2416,
+        208
+      ],
+      "webhookId": "fe922f36-ed13-4471-b9d8-7993260d7150",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.extension }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.isImage }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Skip extraction"
+        }
+      },
+      "id": "9e9b8427-883a-4b5f-8911-1ca89ffe67db",
+      "name": "Route by File Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1696,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true,
+          "maxPages": 3
+        }
+      },
+      "id": "de042898-e66a-4e07-94dd-661000731131",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const base = $('Filter Files').item.json;\nconst raw = $json.text || $json.content || '';\nconst text = String(raw).replace(/\\s+/g, ' ').trim().slice(0, 1500);\nreturn { json: Object.assign({}, base, { extractedText: text }) };"
+      },
+      "id": "c62c4ec3-ac1b-4f6a-9565-74615c0af942",
+      "name": "Prepare Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        1104
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sender: {{ $json.senderName }} <{{ $json.senderEmail }}>\nSubject: {{ $json.subject }}\nEmail date: {{ $json.date }}\nOriginal filename: {{ $json.originalName }}\nExtracted text (first 1500 chars):\n{{ $json.extractedText }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You classify business documents. From the sender, subject, original filename and extracted text, return docType (one of: invoice, contract, report, receipt, id_document, other), company (the issuing company or sender organisation), docDate (the document date as YYYY-MM-DD, or empty string if unknown) and shortTitle (at most 4 words, English or Arabic, letters and digits only, no special characters). Never invent data. Use an empty string when a value is unknown."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "6a645775-9705-45b2-a894-cec74d9b6ae0",
+      "name": "Name and Classify",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -640,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "6d91af2c-fbb1-435c-9056-fd7a0983064f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -632,
+        1720
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"docType\":\"invoice\",\"company\":\"Acme Corp\",\"docDate\":\"2025-01-31\",\"shortTitle\":\"Monthly hosting\"}"
+      },
+      "id": "bf052123-6aa6-425d-9459-60dfd85dff66",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -504,
+        1720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const src = $('Prepare Text').item.json;\nconst ai = $json.output || {};\nconst clean = (s) => String(s || '').replace(/[\\\\/:*?\"<>|#%&{}$!'@+=\\[\\]]/g, '').replace(/\\s+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');\nconst types = ['invoice', 'contract', 'report', 'receipt', 'id_document', 'other'];\nconst docType = types.indexOf(ai.docType) >= 0 ? ai.docType : 'other';\nlet date = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(ai.docDate || '')) ? ai.docDate : '';\nif (!date) {\n  const d = new Date(src.date);\n  date = isNaN(d.getTime()) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);\n}\nconst company = clean(ai.company) || 'Unknown';\nconst shortTitle = clean(ai.shortTitle) || 'Document';\nconst newName = [date, company, docType, shortTitle].join('_') + '.' + src.extension;\nconst month = date.slice(0, 7);\nreturn {\n  json: Object.assign({}, src, {\n    docType: docType,\n    company: company,\n    docDate: date,\n    shortTitle: shortTitle,\n    newName: newName,\n    month: month,\n    folderPath: month + ' / ' + docType,\n  }),\n  binary: $('Filter Files').item.binary,\n};"
+      },
+      "id": "1799a19d-f2b1-4a40-977a-ebf7807dbeb9",
+      "name": "Build Filename and Path",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        1504
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.month }}",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "15n7D3Hh-q4Z1TPuyvR8SAVASCWFT-gxM",
+            "mode": "list",
+            "cachedResultName": "Mohammed saada",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/15n7D3Hh-q4Z1TPuyvR8SAVASCWFT-gxM"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {}
+      },
+      "id": "62b33ef7-0ef8-4088-9c30-c92303b5bacc",
+      "name": "Search Month Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        48,
+        1568
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "me1",
+              "leftValue": "={{ !!$json.id }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4cfd38bc-9feb-499e-a1f6-15590aac38a1",
+      "name": "Month Folder Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: Object.assign({}, $('Build Filename and Path').item.json, { monthFolderId: $json.id }) };"
+      },
+      "id": "ea088421-08bf-412c-abca-4017307d48ab",
+      "name": "Month Folder ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.docType }}",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.monthFolderId }}"
+          },
+          "whatToSearch": "folders"
+        },
+        "options": {}
+      },
+      "id": "41ea6e76-5857-4462-9688-86f76dad8c1e",
+      "name": "Search DocType Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        944,
+        1568
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "te1",
+              "leftValue": "={{ !!$json.id }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8725e03d-9216-4254-96cd-247232324adc",
+      "name": "DocType Folder Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: Object.assign({}, $('Month Folder ID').item.json, { docFolderId: $json.id }) };"
+      },
+      "id": "88f42de2-df47-45c9-b8f1-6589b56fc8f5",
+      "name": "DocType Folder ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.newName.replace(/\\.[^.]+$/, '') }}",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "={{ $json.docFolderId }}"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {}
+      },
+      "id": "98235e06-d8c1-4a15-87ef-c9b3b7d3e0db",
+      "name": "Search Existing Files",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1952,
+        1600
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('DocType Folder ID').first().json;\nconst names = $input.all().map((i) => i.json.name).filter((n) => !!n);\nconst dot = d.newName.lastIndexOf('.');\nconst base = d.newName.slice(0, dot);\nconst ext = d.newName.slice(dot);\nlet finalName = d.newName;\nlet n = 2;\nwhile (names.indexOf(finalName) >= 0) {\n  finalName = base + '_' + n + ext;\n  n++;\n}\nreturn [{ json: Object.assign({}, d, { finalName: finalName }), binary: $('Build Filename and Path').first().binary }];"
+      },
+      "id": "b8b38525-c635-425f-a05a-6393008ff422",
+      "name": "Unique Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.finalName }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.docFolderId }}"
+        },
+        "options": {}
+      },
+      "id": "39781fb9-b657-4225-806a-f440392c1e68",
+      "name": "Upload to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2400,
+        1600
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const d = $('Unique Name').item.json;\nconst ok = !!$json.id && !$json.error;\nreturn {\n  json: Object.assign({}, d, {\n    ok: ok,\n    driveFileId: $json.id || '',\n    driveLink: ok ? 'https://drive.google.com/file/d/' + $json.id + '/view' : '',\n    folderLink: 'https://drive.google.com/drive/folders/' + d.docFolderId,\n    logDate: new Date().toISOString().slice(0, 10),\n  }),\n};"
+      },
+      "id": "22d16286-6171-4f03-9b1a-3a957dd0056e",
+      "name": "Prepare Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2736,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "uo1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b377746f-46f1-4a01-b226-320d85695175",
+      "name": "Upload OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2960,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1jPQU1AWqMgtyg7wFpjDshMVfkIpiBMA8ct2qJwK72LU",
+          "mode": "list",
+          "cachedResultName": "Telegram_Drive_Log_Template",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPQU1AWqMgtyg7wFpjDshMVfkIpiBMA8ct2qJwK72LU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1121806096,
+          "mode": "list",
+          "cachedResultName": "Log File",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1jPQU1AWqMgtyg7wFpjDshMVfkIpiBMA8ct2qJwK72LU/edit#gid=1121806096"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.logDate }}",
+            "Sender": "={{ $json.senderName }} <{{ $json.senderEmail }}>",
+            "Subject": "={{ $json.subject }}",
+            "Original Name": "={{ $json.originalName }}",
+            "New Name": "={{ $json.finalName }}",
+            "Type": "={{ $json.docType }}",
+            "Link": "={{ $json.driveLink }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sender",
+              "displayName": "Sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Original Name",
+              "displayName": "Original Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "New Name",
+              "displayName": "New Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8c0cca5a-178a-4028-8c7f-09407e5ac73c",
+      "name": "Log File",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        1744
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eh174kpNKCq6BdBr",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $('Prepare Log').item.json };"
+      },
+      "id": "7b71bd4c-b2a5-4106-9877-8222f0a748b4",
+      "name": "Carry Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3408,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b5df6b54-c63b-440c-b6d1-7d1f93175b01",
+      "name": "Loop Over Attachments",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $('Month Folder ID').item.json.docType }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Month Folder ID').item.json.monthFolderId }}"
+        },
+        "options": {}
+      },
+      "id": "8457b714-3925-4483-b262-a7a7da2d1f45",
+      "name": "Create DocType Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1392,
+        1632
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $('Build Filename and Path').item.json.month }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "15n7D3Hh-q4Z1TPuyvR8SAVASCWFT-gxM",
+          "cachedResultName": "Mohammed saada",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/15n7D3Hh-q4Z1TPuyvR8SAVASCWFT-gxM"
+        },
+        "options": {}
+      },
+      "id": "c5935e86-11a4-47fe-8cd1-45cb053c39f1",
+      "name": "Create Month Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        1632
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ldknj54OOkRkDnc5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-5.6-luna"
+        },
+        "text": "Transcribe all readable text in this document image (company names, dates, amounts, titles). Reply with plain text only.",
+        "inputType": "base64",
+        "options": {
+          "detail": "auto",
+          "maxTokens": 600
+        }
+      },
+      "id": "cd9a60e7-d1e3-4ae5-8971-b9242ad629a6",
+      "name": "Read Image (OpenAI Vision)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        1104
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c338a2aa-cb09-41bd-91e8-529a7ea8e98c",
+      "name": "Manual Trigger (Test)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 3,
+        "simple": false,
+        "filters": {
+          "q": "has:attachment -label:saved-to-drive",
+          "readStatus": "both"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "id": "b1b34195-9575-4130-a966-e87d20b42c8d",
+      "name": "Fetch Test Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -496,
+        400
+      ],
+      "webhookId": "32b3c3ec-4a4d-4e75-8ea2-92aa3e5621ac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Split Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Attachments": {
+      "main": [
+        [
+          {
+            "node": "Filter Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Files": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Per Email": {
+      "main": [
+        [
+          {
+            "node": "Get Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Labels": {
+      "main": [
+        [
+          {
+            "node": "Find Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Label": {
+      "main": [
+        [
+          {
+            "node": "Label Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Exists?": {
+      "main": [
+        [
+          {
+            "node": "Label ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label ID": {
+      "main": [
+        [
+          {
+            "node": "Add Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Label": {
+      "main": [
+        [
+          {
+            "node": "Notify Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Label": {
+      "main": [
+        [
+          {
+            "node": "Label ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by File Type": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Image (OpenAI Vision)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text": {
+      "main": [
+        [
+          {
+            "node": "Name and Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Name and Classify": {
+      "main": [
+        [
+          {
+            "node": "Build Filename and Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Name and Classify",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Name and Classify",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Filename and Path": {
+      "main": [
+        [
+          {
+            "node": "Search Month Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Month Folder": {
+      "main": [
+        [
+          {
+            "node": "Month Folder Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Month Folder Exists?": {
+      "main": [
+        [
+          {
+            "node": "Month Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Month Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Month Folder ID": {
+      "main": [
+        [
+          {
+            "node": "Search DocType Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search DocType Folder": {
+      "main": [
+        [
+          {
+            "node": "DocType Folder Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DocType Folder Exists?": {
+      "main": [
+        [
+          {
+            "node": "DocType Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create DocType Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DocType Folder ID": {
+      "main": [
+        [
+          {
+            "node": "Search Existing Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Existing Files": {
+      "main": [
+        [
+          {
+            "node": "Unique Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unique Name": {
+      "main": [
+        [
+          {
+            "node": "Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "Prepare Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Log": {
+      "main": [
+        [
+          {
+            "node": "Upload OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload OK?": {
+      "main": [
+        [
+          {
+            "node": "Log File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Carry Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log File": {
+      "main": [
+        [
+          {
+            "node": "Carry Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carry Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Attachments": {
+      "main": [
+        [
+          {
+            "node": "Summarize Per Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by File Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create DocType Folder": {
+      "main": [
+        [
+          {
+            "node": "DocType Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Month Folder": {
+      "main": [
+        [
+          {
+            "node": "Month Folder ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Image (OpenAI Vision)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger (Test)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Test Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Test Emails": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "07307d6d-e368-4f84-86da-8c682018e472",
+  "meta": {
+    "instanceId": "c9ad5b6c161c18b0b594df2bbf802cae758add43fef003637c8fe48136c54063"
+  },
+  "nodeGroups": [
+    {
+      "id": "81f4c485-00f6-4ddd-9304-68f91e8f9a72",
+      "name": "Prepare attachments",
+      "nodeIds": [
+        "661bdda0-e11a-479d-8179-fa7fcec8d530",
+        "4bc3f048-58d7-4161-bd49-d5c308389f55",
+        "dd3ccd28-c387-4095-b197-bbace2e1fc2a"
+      ],
+      "description": "Takes new Gmail emails (or test emails), splits out each attachment, keeps only allowed types and sizes"
+    },
+    {
+      "id": "8404395c-af4f-4627-8daf-6c98081b112a",
+      "name": "Read content",
+      "nodeIds": [
+        "9e9b8427-883a-4b5f-8911-1ca89ffe67db",
+        "de042898-e66a-4e07-94dd-661000731131",
+        "cd9a60e7-d1e3-4ae5-8971-b9242ad629a6",
+        "c62c4ec3-ac1b-4f6a-9565-74615c0af942"
+      ],
+      "description": "Pulls the first 1500 characters from PDFs and images so the AI has context; other files skip this"
+    },
+    {
+      "id": "e83ab753-6708-485b-9b5e-35ee99385a24",
+      "name": "Name the file",
+      "nodeIds": [
+        "6a645775-9705-45b2-a894-cec74d9b6ae0",
+        "6d91af2c-fbb1-435c-9056-fd7a0983064f",
+        "bf052123-6aa6-425d-9459-60dfd85dff66",
+        "1799a19d-f2b1-4a40-977a-ebf7807dbeb9"
+      ],
+      "description": "AI picks type, company, date and title, then builds the final file name and month/type folder path"
+    },
+    {
+      "id": "43bb236a-c3aa-42f2-b90d-99eedda721cd",
+      "name": "Find or create folders",
+      "nodeIds": [
+        "62b33ef7-0ef8-4088-9c30-c92303b5bacc",
+        "4cfd38bc-9feb-499e-a1f6-15590aac38a1",
+        "c5935e86-11a4-47fe-8cd1-45cb053c39f1",
+        "ea088421-08bf-412c-abca-4017307d48ab",
+        "41ea6e76-5857-4462-9688-86f76dad8c1e",
+        "8725e03d-9216-4254-96cd-247232324adc",
+        "8457b714-3925-4483-b262-a7a7da2d1f45",
+        "88f42de2-df47-45c9-b8f1-6589b56fc8f5"
+      ],
+      "description": "Finds the YYYY-MM and document-type folders in Drive, creating whichever is missing"
+    },
+    {
+      "id": "1388804a-e757-412a-bf57-c6016677c06e",
+      "name": "Save to Drive",
+      "nodeIds": [
+        "98235e06-d8c1-4a15-87ef-c9b3b7d3e0db",
+        "b8b38525-c635-425f-a05a-6393008ff422",
+        "39781fb9-b657-4225-806a-f440392c1e68"
+      ],
+      "description": "Checks for same-name files, adds _2, _3 if needed, uploads; a failed upload does not stop the rest"
+    },
+    {
+      "id": "80ea0622-20a8-4b35-b01c-cb7757b23bc1",
+      "name": "Log result",
+      "nodeIds": [
+        "22d16286-6171-4f03-9b1a-3a957dd0056e",
+        "b377746f-46f1-4a01-b226-320d85695175",
+        "8c0cca5a-178a-4028-8c7f-09407e5ac73c",
+        "7b71bd4c-b2a5-4106-9877-8222f0a748b4"
+      ],
+      "description": "Appends a row per saved file to the Google Sheet log and moves on to the next attachment"
+    },
+    {
+      "id": "a2fc5306-df18-4244-b405-56637c93edf7",
+      "name": "Label and notify",
+      "nodeIds": [
+        "9f9b530a-aa7d-437f-8f79-4740885ef0fc",
+        "78abb458-6bbc-4707-abbd-f7a7bee43acc",
+        "77061bbe-6bdc-4c4b-9fea-a00927f28774",
+        "3c635895-950d-4bb4-82b0-3728c7543309",
+        "e761bcb0-8d3f-4a67-b212-15230f002167",
+        "78a6268a-c132-4925-b67e-3363e67f9be2",
+        "94612224-4076-4574-9443-3eea36beb571",
+        "f2619c35-233f-4450-bd68-211bafd83bc9"
+      ],
+      "description": "Once all files are done, labels each email saved-to-drive and sends a Telegram summary"
+    }
+  ],
+  "id": "9P2LVc5oVVIevrJ7",
+  "tags": []
+}

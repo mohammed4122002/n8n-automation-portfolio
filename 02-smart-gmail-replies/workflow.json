@@ -1,0 +1,1159 @@
+{
+  "name": "02 - Smart Gmail Reply Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 02 - Smart Gmail Reply Assistant\n\n**Flow:** New unread INBOX email (or Manual Test: fetches your latest real unread email) -> Config -> Clean Email (strip HTML/quotes, detect Arabic/English) -> Skip Unwanted (no-reply, newsletters, your own emails, already labeled) -> AI classifies type + urgency -> AI writes a reply in the sender's language -> auto-send or save as Gmail draft -> label the email -> Telegram notification.\n\n**Credentials:** Gmail OAuth2, OpenAI API, Telegram Bot API.\n\n**autoSendTypes:** edit it in the Config node. `[]` (current) saves every reply as a draft; `[\"inquiry\"]` auto-sends inquiries; e.g. `[\"inquiry\",\"quote_request\"]` auto-sends both.\n\n**No double replies:** every handled email gets the label `auto-replied` (or `spam-filtered`), and Skip Unwanted ignores emails that already have it.",
+        "height": 420,
+        "width": 520,
+        "color": 4
+      },
+      "id": "b8dd7673-ceda-4a08-9032-fbadbf19ae8a",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "in:inbox is:unread -label:auto-replied -label:spam-filtered",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "040dff5f-1daf-41f2-be1f-c3d3b0ac27cd",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -192,
+        512
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-myname",
+              "name": "myName",
+              "type": "string",
+              "value": "Mohammed Hamdi Abu Saada"
+            },
+            {
+              "id": "cfg-myemail",
+              "name": "myEmail",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "cfg-business",
+              "name": "businessName",
+              "type": "string",
+              "value": "Mohammed Hamdi Abu Saada"
+            },
+            {
+              "id": "cfg-signature",
+              "name": "signature",
+              "type": "string",
+              "value": "Mohammed Hamdi Abu Saada"
+            },
+            {
+              "id": "cfg-autosend",
+              "name": "autoSendTypes",
+              "type": "array",
+              "value": "={{ [] }}"
+            },
+            {
+              "id": "cfg-chat",
+              "name": "telegramChatId",
+              "type": "string",
+              "value": "1801824418"
+            },
+            {
+              "id": "cfg-slots",
+              "name": "meetingSlots",
+              "type": "string",
+              "value": "={{ $now.plus({ weeks: 1 }).startOf(\"week\").plus({ days: 1 }).toFormat(\"cccc d LLLL\") }} at 10:00, or {{ $now.plus({ weeks: 1 }).startOf(\"week\").plus({ days: 3 }).toFormat(\"cccc d LLLL\") }} at 14:00"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "94f2fa04-053c-4ab5-b426-0f0693c4c9b6",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "id": "45331741-baed-4bcc-9abf-03bf32fd538d",
+      "name": "Get Labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        416
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "webhookId": "16c934d4-e03d-4b13-9236-b550604826a8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const labels = $('Get Labels').all().map(i => i.json);\nconst findLabelId = (name) => { const l = labels.find(x => String(x.name || '').toLowerCase() === name); return l ? l.id : ''; };\nconst autoRepliedLabelId = findLabelId('auto-replied');\nconst spamLabelId = findLabelId('spam-filtered');\n\nfunction parseFrom(f) {\n  if (f && typeof f === 'object' && Array.isArray(f.value) && f.value.length) {\n    return { name: f.value[0].name || '', email: String(f.value[0].address || '').toLowerCase() };\n  }\n  const s = String((f && f.text) || f || '');\n  const m = s.match(/^(.*?)<([^>]+)>/);\n  if (m) return { name: m[1].replace(/\"/g, '').trim(), email: m[2].trim().toLowerCase() };\n  return { name: '', email: s.trim().toLowerCase() };\n}\n\nfunction stripHtml(h) {\n  return String(h || '')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/p>/gi, '\\n')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"');\n}\n\nfunction stripQuoted(t) {\n  const lines = String(t || '').split(/\\r?\\n/);\n  const out = [];\n  for (const line of lines) {\n    const l = line.trim();\n    if (/^On .+wrote:$/i.test(l) || /^-{2,}\\s*Original Message/i.test(l) || /^From:\\s/i.test(l) || /كتب.*:$/.test(l)) break;\n    if (l.startsWith('>')) continue;\n    out.push(line);\n  }\n  return out.join('\\n').replace(/[ \\t]+/g, ' ').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\nreturn $('Config').all().map((item, idx) => {\n  const e = item.json;\n  const sender = parseFrom(e.from || e.From);\n  const subject = e.subject || e.Subject || '(no subject)';\n  const rawText = e.text ? e.text : (e.html ? stripHtml(e.html) : (e.snippet || ''));\n  const body = stripQuoted(rawText).slice(0, 1500);\n  const arabic = (body + ' ' + subject).match(/[\\u0600-\\u06FF]/g) || [];\n  const latin = (body + ' ' + subject).match(/[A-Za-z]/g) || [];\n  const lang = arabic.length > latin.length ? 'ar' : 'en';\n  const headers = e.headers || {};\n  const headerKeys = Object.keys(headers).map(k => k.toLowerCase());\n  const labelIds = e.labelIds || [];\n  const myEmail = String(e.myEmail || '').trim().toLowerCase();\n  return {\n    json: {\n      messageId: e.id,\n      threadId: e.threadId,\n      senderName: sender.name || sender.email,\n      senderEmail: sender.email,\n      subject: subject,\n      body: body,\n      lang: lang,\n      isNoReply: /(no-?reply|do-?not-?reply|mailer-daemon|postmaster)/i.test(sender.email),\n      hasListUnsubscribe: headerKeys.includes('list-unsubscribe') || Boolean(e['list-unsubscribe']),\n      isFromMe: myEmail !== '' && sender.email === myEmail,\n      alreadyLabeled: (autoRepliedLabelId !== '' && labelIds.includes(autoRepliedLabelId)) || (spamLabelId !== '' && labelIds.includes(spamLabelId)),\n      autoRepliedLabelId: autoRepliedLabelId,\n      spamLabelId: spamLabelId,\n      myName: e.myName,\n      businessName: e.businessName,\n      signature: e.signature,\n      autoSendTypes: e.autoSendTypes || [],\n      telegramChatId: e.telegramChatId,\n      meetingSlots: e.meetingSlots,\n    },\n    pairedItem: { item: 0 },\n  };\n});"
+      },
+      "id": "2dc3138a-3060-4d07-98b2-6fa40319949b",
+      "name": "Clean Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "skip-noreply",
+              "leftValue": "={{ $json.isNoReply }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "skip-unsub",
+              "leftValue": "={{ $json.hasListUnsubscribe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "skip-me",
+              "leftValue": "={{ $json.isFromMe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "skip-labeled",
+              "leftValue": "={{ $json.alreadyLabeled }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "4f7e5eeb-c683-4d69-933f-2e22193f1384",
+      "name": "Skip Unwanted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=From: {{ $json.senderName }} <{{ $json.senderEmail }}>\nSubject: {{ $json.subject }}\n\n{{ $json.body }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You classify incoming business emails. Choose exactly one type:\n- inquiry: a general question about services, products, or how something works\n- complaint: the sender is unhappy, reports a problem, delay, or bad experience\n- quote_request: asks for a price, quote, estimate, or cost\n- meeting_request: asks for a call, meeting, or appointment\n- spam: newsletters, marketing, promotions, cold sales pitches, phishing, or irrelevant mass mail\nUrgency: high if the sender is angry, mentions a deadline within days, or a blocking problem; medium if they expect a reply soon; otherwise low.\nSummary: one short line in English.\nThe email may be in Arabic or English."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "11c95711-1159-4277-b6ef-b66d0c0dbd93",
+      "name": "Classify Email",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1104,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "gpt-4.1"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "3b382385-68e1-4727-8514-73e03d1d4c7c",
+      "name": "OpenAI Classifier Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1112,
+        536
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"inquiry\",\n        \"complaint\",\n        \"quote_request\",\n        \"meeting_request\",\n        \"spam\"\n      ]\n    },\n    \"urgency\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"low\",\n        \"medium\",\n        \"high\"\n      ]\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"One-line summary of the email\"\n    }\n  },\n  \"required\": [\n    \"type\",\n    \"urgency\",\n    \"summary\"\n  ]\n}"
+      },
+      "id": "a34809e6-a2e0-4b7a-9d0c-9027b8b8b929",
+      "name": "Classification Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1240,
+        536
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "type-inquiry",
+                    "leftValue": "={{ $json.output.type }}",
+                    "rightValue": "inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "inquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "type-complaint",
+                    "leftValue": "={{ $json.output.type }}",
+                    "rightValue": "complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "complaint"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "type-quote_request",
+                    "leftValue": "={{ $json.output.type }}",
+                    "rightValue": "quote_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "quote_request"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "type-meeting_request",
+                    "leftValue": "={{ $json.output.type }}",
+                    "rightValue": "meeting_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "meeting_request"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "type-spam",
+                    "leftValue": "={{ $json.output.type }}",
+                    "rightValue": "spam",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "spam"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1f896a14-77b3-4710-add4-96e6b435843a",
+      "name": "Route by Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -352,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sender name: {{ $('Clean Email').item.json.senderName }}\nSubject: {{ $('Clean Email').item.json.subject }}\nSummary: {{ $json.output.summary }}\n\nEmail:\n{{ $('Clean Email').item.json.body }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You write email replies on behalf of {{ $('Clean Email').item.json.myName }} from {{ $('Clean Email').item.json.businessName }}.\n\nTask for this email type ({{ $json.output.type }}):\n{{ ({ inquiry: \"Answer helpfully and briefly. If information needed to answer is missing, ask for that specific detail.\", complaint: \"Apologize sincerely, acknowledge the specific problem, and promise a follow-up within 24 hours. Do not make any commitment about refunds, compensation, or outcomes.\", quote_request: \"Thank them for their interest. List the information needed to prepare a quote: project scope, deadline, and budget. Say a quote will follow once these details are received.\", meeting_request: \"Propose exactly these two time slots: \" + $('Clean Email').item.json.meetingSlots + \". Ask them to confirm which one works.\" })[$json.output.type] }}\n\nRules:\n- Write ONLY in {{ $('Clean Email').item.json.lang === \"ar\" ? \"Arabic\" : \"English\" }}, the same language as the sender.\n- Polite, warm, human tone. Address the sender by name if known.\n- Under 120 words.\n- Never invent prices, dates, facts, policies, or promises that are not given here.\n- Output only the email body (no subject line, no placeholders like [Name]).\n- End with exactly this signature on its own lines:\n{{ $('Clean Email').item.json.signature }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "959a2633-0a3f-49af-a0d6-f69fd31007d5",
+      "name": "Write Reply",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -128,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "gpt-4.1"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "9b85622f-9023-4a5b-853e-e6cd3e7d2f0d",
+      "name": "OpenAI Writer Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -56,
+        1176
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pr-text",
+              "name": "replyText",
+              "type": "string",
+              "value": "={{ $json.text.trim() }}"
+            },
+            {
+              "id": "pr-auto",
+              "name": "autoSend",
+              "type": "boolean",
+              "value": "={{ ($('Clean Email').item.json.autoSendTypes || []).includes($('Classify Email').item.json.output.type) }}"
+            },
+            {
+              "id": "pr-status",
+              "name": "replyStatus",
+              "type": "string",
+              "value": "={{ ($('Clean Email').item.json.autoSendTypes || []).includes($('Classify Email').item.json.output.type) ? \"sent\" : \"saved as draft\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c046b7f7-ed92-4d8d-95d7-393e4a14ca04",
+      "name": "Prepare Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "auto-send",
+              "leftValue": "={{ $json.autoSend }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e1c4f955-b0ae-476f-89e6-97300d5dc2f9",
+      "name": "Auto Send?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Clean Email').item.json.messageId }}",
+        "emailType": "text",
+        "message": "={{ $('Prepare Reply').item.json.replyText }}",
+        "options": {
+          "appendAttribution": false,
+          "replyToSenderOnly": true
+        }
+      },
+      "id": "69675fd4-3c5f-42b3-aced-d34d9f1cdf8a",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        848
+      ],
+      "webhookId": "49c4b30f-cd16-482f-917b-bb1ed6280a5d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lt-msg",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{ $('Clean Email').item.json.messageId }}"
+            },
+            {
+              "id": "lt-type",
+              "name": "type",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.type }}"
+            },
+            {
+              "id": "lt-urg",
+              "name": "urgency",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.urgency }}"
+            },
+            {
+              "id": "lt-sum",
+              "name": "summary",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.summary }}"
+            },
+            {
+              "id": "lt-sname",
+              "name": "senderName",
+              "type": "string",
+              "value": "={{ $('Clean Email').item.json.senderName }}"
+            },
+            {
+              "id": "lt-semail",
+              "name": "senderEmail",
+              "type": "string",
+              "value": "={{ $('Clean Email').item.json.senderEmail }}"
+            },
+            {
+              "id": "lt-subj",
+              "name": "subject",
+              "type": "string",
+              "value": "={{ $('Clean Email').item.json.subject }}"
+            },
+            {
+              "id": "lt-lname",
+              "name": "labelName",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.type === \"spam\" ? \"spam-filtered\" : \"auto-replied\" }}"
+            },
+            {
+              "id": "lt-lid",
+              "name": "labelId",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.type === \"spam\" ? $('Clean Email').item.json.spamLabelId : $('Clean Email').item.json.autoRepliedLabelId }}"
+            },
+            {
+              "id": "lt-status",
+              "name": "replyStatus",
+              "type": "string",
+              "value": "={{ $('Classify Email').item.json.output.type === \"spam\" ? \"no reply (spam)\" : $('Prepare Reply').item.json.replyStatus }}"
+            },
+            {
+              "id": "lt-chat",
+              "name": "telegramChatId",
+              "type": "string",
+              "value": "={{ $('Clean Email').item.json.telegramChatId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5e606b08-6f00-40a0-8f30-388ef1383cd9",
+      "name": "Set Label Target",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "label-exists",
+              "leftValue": "={{ $json.labelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5fae90b1-d4f6-4a6e-bd41-9c466a60b924",
+      "name": "Label Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Set Label Target').item.json.messageId }}",
+        "labelIds": [
+          "={{ $('Set Label Target').item.json.labelId || $('Create Label').item.json.id }}"
+        ]
+      },
+      "id": "6bb77432-37e6-4cc3-9d65-ea7432d33a94",
+      "name": "Add Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        960
+      ],
+      "webhookId": "ab5f2012-8940-4465-93a7-7ec0bcd568b7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=1801824418",
+        "text": "={{ (() => { const t = $('Set Label Target').item.json; const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); const red = (t.type === 'complaint' || t.urgency === 'high') ? '🔴 ' : ''; return red + '<b>New email: ' + esc(t.type) + '</b>\\nUrgency: ' + esc(t.urgency) + '\\nFrom: ' + esc(t.senderName) + ' &lt;' + esc(t.senderEmail) + '&gt;\\nSubject: ' + esc(t.subject) + '\\nSummary: ' + esc(t.summary) + '\\nReply: ' + esc(t.replyStatus); })() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "065c129b-b27e-4fef-be39-317b7838c2f5",
+      "name": "Notify Me",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1904,
+        960
+      ],
+      "webhookId": "a9167ed0-f315-45bb-a86f-29de1e8843ab",
+      "credentials": {
+        "telegramApi": {
+          "id": "f3hm4kwjqJtiHVjU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $json.labelName }}",
+        "options": {}
+      },
+      "id": "8dd2850c-6752-4d2f-9acd-f5811f9ab654",
+      "name": "Create Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1456,
+        1040
+      ],
+      "webhookId": "c961e266-dadb-479a-92b7-5f709c63c1e5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ /^re:/i.test($('Clean Email').item.json.subject) ? $('Clean Email').item.json.subject : \"Re: \" + $('Clean Email').item.json.subject }}",
+        "message": "={{ $('Prepare Reply').item.json.replyText }}",
+        "options": {
+          "threadId": "={{ $('Clean Email').item.json.threadId }}",
+          "sendTo": "={{ $('Clean Email').item.json.senderEmail }}"
+        }
+      },
+      "id": "c117d60e-8206-406b-bd51-c3799c9af56e",
+      "name": "Create Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        1040
+      ],
+      "webhookId": "2243e313-c923-43e6-8a50-5595c58843d0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e5b13b95-3c6a-4f9a-b05a-a46961851b13",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "in:inbox is:unread -label:auto-replied -label:spam-filtered",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "561f5234-3db1-4c4d-bc58-c711dbd7b7df",
+      "name": "Fetch Latest Unread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -192,
+        320
+      ],
+      "executeOnce": true,
+      "webhookId": "6e96e678-b672-4c11-a38b-5d1c94559415",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pV9gXQMmGdZXF9A4",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get Labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Labels": {
+      "main": [
+        [
+          {
+            "node": "Clean Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Email": {
+      "main": [
+        [
+          {
+            "node": "Skip Unwanted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Unwanted": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Route by Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classification Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify Email",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Type": {
+      "main": [
+        [
+          {
+            "node": "Write Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Label Target",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Reply": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Writer Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reply": {
+      "main": [
+        [
+          {
+            "node": "Auto Send?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Send?": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply": {
+      "main": [
+        [
+          {
+            "node": "Set Label Target",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Label Target": {
+      "main": [
+        [
+          {
+            "node": "Label Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Exists?": {
+      "main": [
+        [
+          {
+            "node": "Add Label",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Label": {
+      "main": [
+        [
+          {
+            "node": "Notify Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Label": {
+      "main": [
+        [
+          {
+            "node": "Add Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "main": [
+        [
+          {
+            "node": "Set Label Target",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Fetch Latest Unread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Latest Unread": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "29e2b7a7-a3cb-4e7d-b40d-9ab26b389391",
+  "meta": {
+    "instanceId": "ccfa59b24dd3fae3b33f2c97285c84d31489c0bd1fec8d57a2c82248ed0e917e"
+  },
+  "nodeGroups": [
+    {
+      "id": "3aaad961-540b-4e3a-94b0-458ed2b0a27a",
+      "name": "Prepare incoming email",
+      "nodeIds": [
+        "94f2fa04-053c-4ab5-b426-0f0693c4c9b6",
+        "45331741-baed-4bcc-9abf-03bf32fd538d",
+        "2dc3138a-3060-4d07-98b2-6fa40319949b",
+        "4f7e5eeb-c683-4d69-933f-2e22193f1384"
+      ],
+      "description": "Loads your settings, cleans the email text, detects Arabic or English, and drops newsletters, no-reply and already-handled mail"
+    },
+    {
+      "id": "b42920e2-8c20-471c-8458-0940183396ac",
+      "name": "Classify message",
+      "nodeIds": [
+        "11c95711-1159-4277-b6ef-b66d0c0dbd93",
+        "3b382385-68e1-4727-8514-73e03d1d4c7c",
+        "a34809e6-a2e0-4b7a-9d0c-9027b8b8b929"
+      ],
+      "description": "AI decides if it is an inquiry, complaint, quote request, meeting request or spam, plus urgency and a one-line summary"
+    },
+    {
+      "id": "0394ac69-1e8e-426c-bce3-7922dbe700b8",
+      "name": "Respond to sender",
+      "nodeIds": [
+        "1f896a14-77b3-4710-add4-96e6b435843a",
+        "959a2633-0a3f-49af-a0d6-f69fd31007d5",
+        "9b85622f-9023-4a5b-853e-e6cd3e7d2f0d",
+        "c046b7f7-ed92-4d8d-95d7-393e4a14ca04",
+        "e1c4f955-b0ae-476f-89e6-97300d5dc2f9",
+        "69675fd4-3c5f-42b3-aced-d34d9f1cdf8a",
+        "c117d60e-8206-406b-bd51-c3799c9af56e",
+        "5e606b08-6f00-40a0-8f30-388ef1383cd9"
+      ],
+      "description": "Writes a type-specific reply in the sender's language, then sends it in-thread or saves a draft; spam gets no reply"
+    },
+    {
+      "id": "a2bb4576-99a5-41cb-9d20-6567b9e14871",
+      "name": "Label and notify",
+      "nodeIds": [
+        "5fae90b1-d4f6-4a6e-bd41-9c466a60b924",
+        "8dd2850c-6752-4d2f-9acd-f5811f9ab654",
+        "6bb77432-37e6-4cc3-9d65-ea7432d33a94",
+        "065c129b-b27e-4fef-be39-317b7838c2f5"
+      ],
+      "description": "Marks the original email as handled (creating the label if needed) and pings you on Telegram with the outcome"
+    }
+  ],
+  "id": "guhGoAbXaoI3hfVm",
+  "tags": []
+}
