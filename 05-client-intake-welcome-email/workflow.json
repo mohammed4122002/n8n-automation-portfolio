@@ -1,0 +1,736 @@
+{
+  "name": "05 - Client Intake and Welcome Email",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 05 - Client Intake and Welcome Email\nA client submits the form (or run Manual Test with pinned sample data). The data is cleaned and validated, checked against the sheet for duplicates, saved as a new row, a short Arabic welcome email is written by AI and sent, and you get a Telegram notification. Invalid and duplicate submissions only notify you.\n\n**Credentials:** Google Sheets OAuth2, Gmail OAuth2, OpenAI API, Telegram Bot API.\n\n**Setup:** set telegramChatId, senderName and businessName in Config. Pick the Document and Sheet (From list) in Find Existing Client and Add Client.\n\n**Sheet columns (row 1):** Client ID, Date, Name, Email, Phone, Service, Notes, Status.\n\n**Form URLs:** open the Client Form node and see the Test URL and Production URL tabs.",
+        "height": 420,
+        "width": 520,
+        "color": 4
+      },
+      "id": "54018e34-a80f-406f-8ebf-bd72820cd4e9",
+      "name": "Flow Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "نموذج تسجيل عميل جديد",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "الاسم الكامل",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "البريد الإلكتروني",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "رقم الهاتف",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "الخدمة المطلوبة",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "أتمتة"
+                  },
+                  {
+                    "option": "موقع ويب"
+                  },
+                  {
+                    "option": "وكيل ذكاء اصطناعي"
+                  },
+                  {
+                    "option": "أخرى"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "ملاحظات",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "شكرًا لك، تم استلام طلبك وسنتواصل معك قريبًا ✅"
+            }
+          }
+        }
+      },
+      "id": "327ddca9-e074-442f-a45e-2b02b40747a5",
+      "name": "Client Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        256
+      ],
+      "webhookId": "4f5e55db-1d13-4e92-9daf-7df3588a8d7b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-chat",
+              "name": "telegramChatId",
+              "value": "1801824418",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sender",
+              "name": "senderName",
+              "value": "اسمك هنا",
+              "type": "string"
+            },
+            {
+              "id": "cfg-business",
+              "name": "businessName",
+              "value": "اسم نشاطك هنا",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "c9c0d245-2658-4a6a-a7f7-ad475f9dfbd9",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        352
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "597c4bb4-c7c7-4ab1-b6c3-6694ba252688",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const TZ = 'Asia/Hebron';\nconst j = $input.first().json;\nconst raw = {\n  name: j['الاسم الكامل'],\n  email: j['البريد الإلكتروني'],\n  phone: j['رقم الهاتف'],\n  service: j['الخدمة المطلوبة'],\n  notes: j['ملاحظات'],\n};\nfunction s(v) { return String(v === undefined || v === null ? '' : v).trim(); }\nconst name = s(raw.name);\nconst email = s(raw.email).toLowerCase();\nconst rawPhone = s(raw.phone);\nconst hasPlus = rawPhone.charAt(0) === '+';\nconst digits = rawPhone.replace(/\\D/g, '');\nconst phone = (hasPlus ? '+' : '') + digits;\nconst service = s(raw.service) || 'أخرى';\nconst notes = s(raw.notes);\n\nconst errors = [];\nif (!name) errors.push('الاسم مفقود');\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) errors.push('البريد الإلكتروني غير صالح');\nif (digits.length < 8) errors.push('رقم الهاتف يجب أن يحتوي على 8 أرقام على الأقل');\n\nconst parts = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date());\nconst submittedAt = parts.replace(' ', 'T');\nconst datePart = submittedAt.slice(0, 10).split('-').join('');\nconst code = Math.random().toString(36).slice(2, 6).toUpperCase();\nconst clientId = 'CL-' + datePart + '-' + code;\n\nreturn [{ json: {\n  isValid: errors.length === 0,\n  errors: errors,\n  submittedAt: submittedAt,\n  clientId: clientId,\n  name: name, email: email, phone: phone, service: service, notes: notes,\n  raw: raw,\n} }];"
+      },
+      "id": "41c279a5-ddfa-48d3-9cfd-525a1a2f1a42",
+      "name": "Clean and Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid-true",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e74cf40a-6d76-40b2-82cb-a0d2b228293b",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk",
+          "mode": "list",
+          "cachedResultName": "Clients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2119842024,
+          "mode": "list",
+          "cachedResultName": "Clients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk/edit#gid=2119842024"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Email",
+              "lookupValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "id": "021ac225-6ad5-41d8-88f6-d3f67ac594fc",
+      "name": "Find Existing Client",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eh174kpNKCq6BdBr",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "exists-email",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "467e51a5-734f-434c-9908-e7268f400321",
+      "name": "Already Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegramChatId }}",
+        "text": "=عميل مكرر: {{ $(\"Clean and Validate\").item.json.name }} ({{ $(\"Clean and Validate\").item.json.email }})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c381a773-b870-466a-a3d5-88b2d83896c6",
+      "name": "Notify Duplicate",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2032,
+        0
+      ],
+      "webhookId": "0f515e88-86c8-455b-88dd-76fa318f3df5",
+      "credentials": {
+        "telegramApi": {
+          "id": "HE81pa4qMPkZ07Uw",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk",
+          "mode": "list",
+          "cachedResultName": "Clients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2119842024,
+          "mode": "list",
+          "cachedResultName": "Clients",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13t86V37k6WG-aBFgzDyAPB7fj3Sl4-3UcxX6r2-I_Nk/edit#gid=2119842024"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Client ID": "={{ $(\"Clean and Validate\").item.json.clientId }}",
+            "Date": "={{ $(\"Clean and Validate\").item.json.submittedAt }}",
+            "Name": "={{ $(\"Clean and Validate\").item.json.name }}",
+            "Email": "={{ $(\"Clean and Validate\").item.json.email }}",
+            "Phone": "={{ $(\"Clean and Validate\").item.json.phone }}",
+            "Service": "={{ $(\"Clean and Validate\").item.json.service }}",
+            "Notes": "={{ $(\"Clean and Validate\").item.json.notes }}",
+            "Status": "جديد"
+          },
+          "schema": [
+            {
+              "id": "Client ID",
+              "displayName": "Client ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b3416c6b-13c6-458d-be8b-62b52ccdc76f",
+      "name": "Add Client",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1632,
+        336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eh174kpNKCq6BdBr",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=اسم العميل: {{ $(\"Clean and Validate\").item.json.name }}\nالخدمة المطلوبة: {{ $(\"Clean and Validate\").item.json.service }}\nاسم المرسل: {{ $(\"Config\").first().json.senderName }}\nاسم النشاط: {{ $(\"Config\").first().json.businessName }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You write short, warm welcome emails in Arabic (under 100 words) to new clients. Use the client name and the requested service. Promise a reply within 24 hours. Do NOT invent prices, dates, or any other promises. Sign off with the sender name and business name provided. Return JSON with the fields \"subject\" and \"body\". The body is plain text."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "4ca8e261-f46d-4edf-8bfa-48838191fa90",
+      "name": "Write Welcome",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1856,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "a64e736c-6487-403e-87cd-27608308fed5",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1872,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"subject\": \"أهلاً بك\", \"body\": \"نص الرسالة\" }"
+      },
+      "id": "be7c44d5-a4c9-4372-b63c-03befc2b3b9d",
+      "name": "Welcome Email Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2000,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"Clean and Validate\").item.json.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.output.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4d698ea0-acf4-4923-8578-92e3190a0116",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        336
+      ],
+      "webhookId": "96109a98-56e4-4390-a84d-c1cc4ba1a6b0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vCJ9aarfsxRVDGi5",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegramChatId }}",
+        "text": "=🆕 عميل جديد\nالاسم: {{ $(\"Clean and Validate\").item.json.name }}\nالخدمة: {{ $(\"Clean and Validate\").item.json.service }}\nالهاتف: {{ $(\"Clean and Validate\").item.json.phone }}\nالترحيب: {{ $json.id ? \"تم الإرسال ✅\" : \"فشل الإرسال ❌\" }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "0fd66cd6-c192-4e14-9f45-e4a7703ad66c",
+      "name": "Notify Me",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2432,
+        336
+      ],
+      "webhookId": "36bee7a1-d357-4c9a-a5d5-4893baf7f074",
+      "credentials": {
+        "telegramApi": {
+          "id": "HE81pa4qMPkZ07Uw",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegramChatId }}",
+        "text": "=⚠️ طلب عميل غير صالح\nالأخطاء: {{ $json.errors.join(\"، \") }}\nالبيانات الأصلية: {{ JSON.stringify($json.raw) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8be45dbb-c905-4dc7-be0b-bbaba4d9179e",
+      "name": "Notify Invalid Submission",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        512
+      ],
+      "webhookId": "34ad9673-5ce6-4e6f-ab4c-b341d0529adf",
+      "credentials": {
+        "telegramApi": {
+          "id": "HE81pa4qMPkZ07Uw",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Client Form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Clean and Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean and Validate": {
+      "main": [
+        [
+          {
+            "node": "Is Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid?": {
+      "main": [
+        [
+          {
+            "node": "Find Existing Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Invalid Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Existing Client": {
+      "main": [
+        [
+          {
+            "node": "Already Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Exists?": {
+      "main": [
+        [
+          {
+            "node": "Notify Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Client": {
+      "main": [
+        [
+          {
+            "node": "Write Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Welcome": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Welcome",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Welcome Email Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Write Welcome",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "4f2a1a93-c854-476f-b2c4-b39460ffb899",
+  "meta": {
+    "instanceId": "c9ad5b6c161c18b0b594df2bbf802cae758add43fef003637c8fe48136c54063"
+  },
+  "nodeGroups": [
+    {
+      "id": "37f028f4-f0a7-4ce0-bdaa-2d31c25dede2",
+      "name": "Clean and validate input",
+      "nodeIds": [
+        "c9c0d245-2658-4a6a-a7f7-ad475f9dfbd9",
+        "41c279a5-ddfa-48d3-9cfd-525a1a2f1a42",
+        "e74cf40a-6d76-40b2-82cb-a0d2b228293b"
+      ],
+      "description": "Takes the form submission, tidies name, email and phone, and checks they are valid before anything is saved"
+    },
+    {
+      "id": "761c8f4e-6e0b-4784-ad2d-8de68f6ad41f",
+      "name": "Check for duplicates",
+      "nodeIds": [
+        "021ac225-6ad5-41d8-88f6-d3f67ac594fc",
+        "467e51a5-734f-434c-9908-e7268f400321"
+      ],
+      "description": "Looks the email up in the Clients sheet so an existing client is never added twice"
+    },
+    {
+      "id": "fb3f2151-11c0-4961-8954-79529e41c5a3",
+      "name": "Register and welcome client",
+      "nodeIds": [
+        "b3416c6b-13c6-458d-be8b-62b52ccdc76f",
+        "4ca8e261-f46d-4edf-8bfa-48838191fa90",
+        "a64e736c-6487-403e-87cd-27608308fed5",
+        "be7c44d5-a4c9-4372-b63c-03befc2b3b9d",
+        "4d698ea0-acf4-4923-8578-92e3190a0116",
+        "0fd66cd6-c192-4e14-9f45-e4a7703ad66c"
+      ],
+      "description": "Saves the new client row, sends an AI-written Arabic welcome email and notifies you on Telegram"
+    }
+  ],
+  "id": "WIGhJaFsWYUgzL2i",
+  "tags": []
+}

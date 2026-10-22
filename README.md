@@ -6,12 +6,12 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-أربع workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، التعامل مع المرفقات، وإيصال التقارير إلى Telegram — مع شرح وصور وطريقة استخدام لكل مشروع.
+خمسة workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، التعامل مع المرفقات، وإيصال التقارير إلى Telegram — مع شرح وصور وطريقة استخدام لكل مشروع.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-04-24B89A?style=for-the-badge" alt="Four projects">
+  <img src="https://img.shields.io/badge/Projects-05-24B89A?style=for-the-badge" alt="Five projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -30,6 +30,7 @@
 | **02** | **مساعد الرد الذكي** | يصنّف رسائل Gmail ويكتب ردًا للمراجعة كمسودة قبل الإرسال. | [شرح المشروع والصور ←](./02-smart-gmail-replies/README.md) |
 | **03** | **منظّم مرفقات Gmail** | يصنّف المرفقات ويسميها ويحفظها في مجلدات مرتبة على Google Drive. | [شرح المشروع والصور ←](./03-gmail-attachments-to-drive/README.md) |
 | **04** | **تقرير المبيعات اليومي** | يحلل بيانات Google Sheets ويرسل ملخص الأداء إلى Telegram. | [شرح المشروع والصور ←](./04-daily-sales-report/README.md) |
+| **05** | **نموذج استقبال العملاء** | يتحقق من الطلبات، يسجل العميل الجديد، ويرسل رسالة ترحيب مع إشعار إلى Telegram. | [شرح المشروع والصور ←](./05-client-intake-welcome-email/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -43,6 +44,10 @@
   <tr>
     <td align="center"><strong>03 · تنظيم المرفقات</strong><br><a href="./03-gmail-attachments-to-drive/README.md"><img src="./03-gmail-attachments-to-drive/screenshots/screenshot-01.png" alt="مخطط تنظيم المرفقات في Google Drive" width="420"></a></td>
     <td align="center"><strong>04 · تقرير المبيعات</strong><br><a href="./04-daily-sales-report/README.md"><img src="./04-daily-sales-report/screenshots/screenshot-02.png" alt="مخطط تقرير المبيعات في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>05 · تسجيل العملاء والترحيب</strong><br><a href="./05-client-intake-welcome-email/README.md"><img src="./05-client-intake-welcome-email/screenshots/workflow-overview.png" alt="مخطط تسجيل العملاء وإرسال رسالة ترحيب في n8n" width="420"></a></td>
+    <td align="center"><strong>نموذج عربي لاستقبال العملاء</strong><br><a href="./05-client-intake-welcome-email/README.md"><img src="./05-client-intake-welcome-email/screenshots/client-intake-form.png" alt="نموذج تسجيل عميل جديد" width="420"></a></td>
   </tr>
 </table>
 
@@ -75,15 +80,17 @@
 ├── 01-email-digest-telegram/
 ├── 02-smart-gmail-replies/
 ├── 03-gmail-attachments-to-drive/
-└── 04-daily-sales-report/
+├── 04-daily-sales-report/
+└── 05-client-intake-welcome-email/
 ```
 
-يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`.
+يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.
 
 ## ملاحظات مهمة
 
 - ابدأ دائمًا بالاختبار اليدوي قبل تفعيل أي تشغيل تلقائي.
 - Workflow الرد على Gmail مضبوط افتراضيًا لحفظ الردود كمسودات. راجع الردود قبل تفعيل الإرسال التلقائي.
+- مشروع استقبال العملاء يرسل تفاصيل الطلب إلى Telegram، وقد يرسل بيانات الإدخال الخام عند فشل التحقق. استخدم محادثة خاصة وراجع بيانات الاختبار قبل النشر.
 - راجع ملفات workflow والصور قبل نشر المستودع للعامة؛ قد تحتوي على أسماء أو عناوين أو معرّفات موارد تخص حساباتك.
 - لا تضع مفاتيح API أو كلمات المرور أو ملفات الاعتماد السرية في GitHub.
 

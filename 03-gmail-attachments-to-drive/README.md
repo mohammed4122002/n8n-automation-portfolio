@@ -51,6 +51,7 @@ Workflow لـ n8n يفحص رسائل Gmail التي تحتوي على مرفق�
 
 - [`workflow.json`](./workflow.json): ملف الاستيراد إلى n8n.
 - [`caption-ar.txt`](./caption-ar.txt): نص المنشور العربي للمشروع.
+- [`templates/drive-attachment-log-template.xlsx`](./templates/drive-attachment-log-template.xlsx): قالب سجل فارغ يتضمن عناوين الأعمدة المطلوبة وملاحظات الإعداد.
 - [`screenshots/`](./screenshots/): صور workflow وسجل الملفات.
 
-> قبل النشر العام، راجع الصورة والتصدير؛ قد يظهر فيهما اسم حساب أو بريد أو رابط Drive أو معرّف مورد. استبدل الإعدادات المربوطة بحسابك بقيم بيئتك.
+> أُفرغ صف بيانات المثال من القالب المنشور؛ احتُفظ بالنسخة الأصلية محليًا داخل `private-assets/` المستثنى من Git. راجع الصور وأخفِ معلومات الحساب قبل النشر العام.
