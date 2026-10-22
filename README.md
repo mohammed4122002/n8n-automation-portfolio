@@ -1,59 +1,96 @@
-# n8n Automation Portfolio — Days 1–4
+<div align="center">
 
-مجموعة من أربعة workflows مبنية باستخدام **n8n** لأتمتة البريد الإلكتروني، تنظيم المرفقات، وإرسال تقارير يومية. هذه هي المشاريع الأربعة الأولى من سلسلة أتمتة من 30 يومًا.
+<img src="./assets/automation-showcase.gif" alt="Animated n8n automation portfolio banner" width="100%">
 
-**GitHub description:** Four n8n workflows for Gmail automation, AI-assisted email handling, Google Drive filing, and Telegram reporting.
+# n8n Automation Portfolio
+
+### أتمتة عملية، خطوة بخطوة
+
+أربع workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، التعامل مع المرفقات، وإيصال التقارير إلى Telegram — مع شرح وصور وطريقة استخدام لكل مشروع.
+
+<p>
+  <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
+  <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
+  <img src="https://img.shields.io/badge/Projects-04-24B89A?style=for-the-badge" alt="Four projects">
+</p>
+
+<a href="#المشاريع">استكشف المشاريع</a> ·
+<a href="#البدء-السريع">البدء السريع</a> ·
+<a href="#ملاحظات-مهمة">ملاحظات مهمة</a>
+
+</div>
+
+---
 
 ## المشاريع
 
-| اليوم | المشروع | ماذا يفعل؟ |
-|---|---|---|
-| 1 | [ملخص البريد اليومي إلى Telegram — الشرح وطريقة الاستخدام](./01-email-digest-telegram/README.md) | يجمع رسائل Gmail غير المقروءة من آخر 24 ساعة، يلخّصها بالعربية باستخدام Gemini، ثم يرسل ملخصًا يوميًا إلى Telegram. |
-| 2 | [الرد الذكي على Gmail — الشرح وطريقة الاستخدام](./02-smart-gmail-replies/README.md) | يصنّف الرسائل الجديدة ويجهّز ردودًا مناسبة. يمكن حفظ الرد كمسودة أو تفعيل الإرسال التلقائي وفق الإعدادات. |
-| 3 | [حفظ مرفقات Gmail في Google Drive — الشرح وطريقة الاستخدام](./03-gmail-attachments-to-drive/README.md) | يفلتر المرفقات، يصنّفها ويسمّيها، ثم ينظّمها في Google Drive مع تسجيل النتائج في Google Sheets. |
-| 4 | [تقرير المبيعات اليومي — الشرح وطريقة الاستخدام](./04-daily-sales-report/README.md) | يقرأ بيانات المبيعات من Google Sheets ويجهّز تقريرًا يوميًا لإرساله إلى Telegram. |
+| # | المشروع | النتيجة | التفاصيل |
+|---|---|---|---|
+| **01** | **ملخص Gmail اليومي** | ملخص عربي للرسائل المهمة يصلك على Telegram كل صباح. | [شرح المشروع والصور ←](./01-email-digest-telegram/README.md) |
+| **02** | **مساعد الرد الذكي** | يصنّف رسائل Gmail ويكتب ردًا للمراجعة كمسودة قبل الإرسال. | [شرح المشروع والصور ←](./02-smart-gmail-replies/README.md) |
+| **03** | **منظّم مرفقات Gmail** | يصنّف المرفقات ويسميها ويحفظها في مجلدات مرتبة على Google Drive. | [شرح المشروع والصور ←](./03-gmail-attachments-to-drive/README.md) |
+| **04** | **تقرير المبيعات اليومي** | يحلل بيانات Google Sheets ويرسل ملخص الأداء إلى Telegram. | [شرح المشروع والصور ←](./04-daily-sales-report/README.md) |
 
-تحتوي صفحة كل مشروع على شرح workflow وخطوات إعداده وتشغيله، مع الصور. ويحتوي مجلده على ملف `workflow.json` القابل للاستيراد و`caption-ar.txt` الذي يحتفظ بنص المنشور العربي.
+كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
-## المتطلبات
+## لمحة من المشاريع
+
+<table>
+  <tr>
+    <td align="center"><strong>01 · ملخص البريد</strong><br><a href="./01-email-digest-telegram/README.md"><img src="./01-email-digest-telegram/screenshots/screenshot-01.png" alt="مخطط ملخص البريد في n8n" width="420"></a></td>
+    <td align="center"><strong>02 · الرد الذكي</strong><br><a href="./02-smart-gmail-replies/README.md"><img src="./02-smart-gmail-replies/screenshots/screenshot-01.png" alt="مخطط مساعد الرد على Gmail في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>03 · تنظيم المرفقات</strong><br><a href="./03-gmail-attachments-to-drive/README.md"><img src="./03-gmail-attachments-to-drive/screenshots/screenshot-01.png" alt="مخطط تنظيم المرفقات في Google Drive" width="420"></a></td>
+    <td align="center"><strong>04 · تقرير المبيعات</strong><br><a href="./04-daily-sales-report/README.md"><img src="./04-daily-sales-report/screenshots/screenshot-02.png" alt="مخطط تقرير المبيعات في n8n" width="420"></a></td>
+  </tr>
+</table>
+
+## البدء السريع
+
+### المتطلبات
 
 - نسخة n8n تعمل لديك.
-- بيانات اعتماد الخدمات المستخدمة في كل workflow، مثل Gmail وGoogle Sheets وGoogle Drive وTelegram.
-- مفتاح Gemini لليوم الأول، ومفتاح OpenAI للأيام التي تستخدم نماذج OpenAI.
+- حسابات وبيانات اعتماد الخدمات التي يستخدمها المشروع: Gmail، Google Sheets، Google Drive، Telegram، وGemini أو OpenAI بحسب الـ workflow.
 
-## الاستيراد والإعداد
+### استيراد وتشغيل workflow
 
-1. نزّل أو استنسخ هذا المستودع.
-2. في n8n، استورد ملف `workflow.json` الخاص بالمشروع المطلوب.
-3. اربط بيانات اعتماد الخدمات من إعدادات n8n؛ ملفات التصدير لا تتضمن بيانات الاعتماد نفسها.
-4. راجع قيم الإعدادات داخل كل workflow، مثل معرّف محادثة Telegram، ومصدر البيانات، والمنطقة الزمنية.
-5. شغّل workflow يدويًا واختبره ببيانات مناسبة قبل تفعيله للتشغيل التلقائي.
+1. افتح صفحة المشروع المطلوبة من الجدول أعلاه.
+2. نزّل ملف `workflow.json` الموجود في مجلدها، ثم استورده إلى n8n.
+3. اربط بيانات اعتمادك بالخدمات المطلوبة.
+4. راجع عقدة **Config** وأي مراجع لملفات Sheets أو مجلدات Drive.
+5. شغّل **Manual Test** واختبره ببيانات مناسبة.
+6. بعد التأكد من النتيجة، فعّل التشغيل التلقائي إن رغبت.
 
-> **تنبيه:** اختبر مشروع الردود على Gmail في وضع المسودات أولًا، وتأكد من إعدادات الإرسال قبل تفعيل أي رد تلقائي. تعامل مع بيانات البريد والمرفقات ومعلومات العملاء بحذر.
+## التقنيات
 
-> **قبل النشر العام:** راجع ملفات workflow والصور، واستبدل أي أسماء أو معرّفات أو روابط أو بيانات تخص حساباتك وبيئة العمل. ملفات الاعتماد السرية لا تُصدّر عادةً مع workflow، لكن قد تبقى إعدادات شخصية أو معرّفات موارد ضمن التصدير أو الصور.
+`n8n` · `Gmail` · `Google Drive` · `Google Sheets` · `Telegram` · `OpenAI` · `Gemini`
 
-## Project structure
+## هيكل المشروع
 
 ```text
-01-email-digest-telegram/
-  README.md
-  workflow.json
-  caption-ar.txt
-  screenshots/
-02-smart-gmail-replies/
-  README.md
-  workflow.json
-  caption-ar.txt
-  screenshots/
-03-gmail-attachments-to-drive/
-  README.md
-  workflow.json
-  caption-ar.txt
-  screenshots/
-04-daily-sales-report/
-  README.md
-  workflow.json
-  caption-ar.txt
-  screenshots/
+.
+├── assets/
+│   └── automation-showcase.gif
+├── 01-email-digest-telegram/
+├── 02-smart-gmail-replies/
+├── 03-gmail-attachments-to-drive/
+└── 04-daily-sales-report/
 ```
+
+يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`.
+
+## ملاحظات مهمة
+
+- ابدأ دائمًا بالاختبار اليدوي قبل تفعيل أي تشغيل تلقائي.
+- Workflow الرد على Gmail مضبوط افتراضيًا لحفظ الردود كمسودات. راجع الردود قبل تفعيل الإرسال التلقائي.
+- راجع ملفات workflow والصور قبل نشر المستودع للعامة؛ قد تحتوي على أسماء أو عناوين أو معرّفات موارد تخص حساباتك.
+- لا تضع مفاتيح API أو كلمات المرور أو ملفات الاعتماد السرية في GitHub.
+
+---
+
+<div align="center">
+
+**بُنيت هذه المشاريع لتكون عملية، قابلة للتجربة، وسهلة التطوير.**
+
+</div>
