@@ -6,12 +6,12 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-خمسة workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، التعامل مع المرفقات، وإيصال التقارير إلى Telegram — مع شرح وصور وطريقة استخدام لكل مشروع.
+عشرة workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، وتحويل الصوت إلى مهام — مع شرح وصور وطريقة استخدام لكل مشروع.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-05-24B89A?style=for-the-badge" alt="Five projects">
+  <img src="https://img.shields.io/badge/Projects-10-24B89A?style=for-the-badge" alt="Ten projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -31,6 +31,11 @@
 | **03** | **منظّم مرفقات Gmail** | يصنّف المرفقات ويسميها ويحفظها في مجلدات مرتبة على Google Drive. | [شرح المشروع والصور ←](./03-gmail-attachments-to-drive/README.md) |
 | **04** | **تقرير المبيعات اليومي** | يحلل بيانات Google Sheets ويرسل ملخص الأداء إلى Telegram. | [شرح المشروع والصور ←](./04-daily-sales-report/README.md) |
 | **05** | **نموذج استقبال العملاء** | يتحقق من الطلبات، يسجل العميل الجديد، ويرسل رسالة ترحيب مع إشعار إلى Telegram. | [شرح المشروع والصور ←](./05-client-intake-welcome-email/README.md) |
+| **06** | **مركز مراقبة أخطاء n8n** | يصنّف الأعطال، يمنع تكرار التنبيهات، ويسجلها ويرسل ملخصًا يوميًا. | [شرح المشروع والصور ←](./06-error-monitoring-center/README.md) |
+| **07** | **ناشر تقويم المحتوى** | ينشر المنشورات المجدولة على LinkedIn وX وTelegram، ويوثق النتيجة. | [شرح المشروع والصور ←](./07-content-calendar-auto-publisher/README.md) |
+| **08** | **فرز تذاكر دعم العملاء** | يجمع رسائل الموقع وTelegram في تذاكر مصنفة وموجهة للفريق المناسب. | [شرح المشروع والصور ←](./08-ai-support-ticket-triage/README.md) |
+| **09** | **بوت ترجمة مع مراجعة جودة** | يترجم عبر Telegram باستخدام قاموس مصطلحات مخصص، ثم يراجع الترجمة قبل إرسالها. | [شرح المشروع والصور ←](./09-arabic-english-translator/README.md) |
+| **10** | **ملاحظات صوتية إلى مهام** | يفرغ الرسائل الصوتية، يستخرج الملخص والمهام، ويضيفها إلى Google Tasks. | [شرح المشروع والصور ←](./10-voice-notes-to-tasks/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -48,6 +53,22 @@
   <tr>
     <td align="center"><strong>05 · تسجيل العملاء والترحيب</strong><br><a href="./05-client-intake-welcome-email/README.md"><img src="./05-client-intake-welcome-email/screenshots/workflow-overview.png" alt="مخطط تسجيل العملاء وإرسال رسالة ترحيب في n8n" width="420"></a></td>
     <td align="center"><strong>نموذج عربي لاستقبال العملاء</strong><br><a href="./05-client-intake-welcome-email/README.md"><img src="./05-client-intake-welcome-email/screenshots/client-intake-form.png" alt="نموذج تسجيل عميل جديد" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>06 · مراقبة أخطاء n8n</strong><br><a href="./06-error-monitoring-center/README.md"><img src="./06-error-monitoring-center/screenshots/workflow-overview.png" alt="مخطط مركز مراقبة الأخطاء في n8n" width="420"></a></td>
+    <td align="center"><strong>07 · نشر تقويم المحتوى</strong><br><a href="./07-content-calendar-auto-publisher/README.md"><img src="./07-content-calendar-auto-publisher/screenshots/workflow-overview.png" alt="مخطط نشر المحتوى المجدول في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>08 · فرز تذاكر الدعم</strong><br><a href="./08-ai-support-ticket-triage/README.md"><img src="./08-ai-support-ticket-triage/screenshots/workflow-overview.png" alt="مخطط فرز تذاكر الدعم في n8n" width="420"></a></td>
+    <td align="center"><strong>سجل التذاكر وملخصها</strong><br><a href="./08-ai-support-ticket-triage/README.md"><img src="./08-ai-support-ticket-triage/screenshots/tickets-example.png" alt="مثال لسجل تذاكر دعم العملاء" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>09 · مترجم Telegram مع فحص الجودة</strong><br><a href="./09-arabic-english-translator/README.md"><img src="./09-arabic-english-translator/screenshots/workflow-overview.png" alt="مخطط بوت الترجمة ومراجعة الجودة في n8n" width="420"></a></td>
+    <td align="center"><strong>قاموس المصطلحات</strong><br><a href="./09-arabic-english-translator/README.md"><img src="./09-arabic-english-translator/screenshots/glossary-example.png" alt="مثال قاموس مصطلحات عربي إنجليزي في Google Sheets" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>10 · الملاحظات الصوتية إلى مهام</strong><br><a href="./10-voice-notes-to-tasks/README.md"><img src="./10-voice-notes-to-tasks/screenshots/workflow-overview.png" alt="مخطط تحويل الملاحظات الصوتية إلى مهام في n8n" width="420"></a></td>
+    <td align="center"><strong>المهام في Google Tasks</strong><br><a href="./10-voice-notes-to-tasks/README.md"><img src="./10-voice-notes-to-tasks/screenshots/tasks-example.png" alt="مثال المهام المنشأة في Google Tasks" width="420"></a></td>
   </tr>
 </table>
 
@@ -69,7 +90,7 @@
 
 ## التقنيات
 
-`n8n` · `Gmail` · `Google Drive` · `Google Sheets` · `Telegram` · `OpenAI` · `Gemini`
+`n8n` · `Gmail` · `Google Drive` · `Google Sheets` · `Google Tasks` · `Telegram` · `LinkedIn` · `X` · `OpenAI` · `Gemini`
 
 ## هيكل المشروع
 
@@ -81,7 +102,12 @@
 ├── 02-smart-gmail-replies/
 ├── 03-gmail-attachments-to-drive/
 ├── 04-daily-sales-report/
-└── 05-client-intake-welcome-email/
+├── 05-client-intake-welcome-email/
+├── 06-error-monitoring-center/
+├── 07-content-calendar-auto-publisher/
+├── 08-ai-support-ticket-triage/
+├── 09-arabic-english-translator/
+└── 10-voice-notes-to-tasks/
 ```
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.
@@ -91,6 +117,10 @@
 - ابدأ دائمًا بالاختبار اليدوي قبل تفعيل أي تشغيل تلقائي.
 - Workflow الرد على Gmail مضبوط افتراضيًا لحفظ الردود كمسودات. راجع الردود قبل تفعيل الإرسال التلقائي.
 - مشروع استقبال العملاء يرسل تفاصيل الطلب إلى Telegram، وقد يرسل بيانات الإدخال الخام عند فشل التحقق. استخدم محادثة خاصة وراجع بيانات الاختبار قبل النشر.
+- اختبر ناشر المحتوى بحسابات وقنوات مخصصة؛ التشغيل اليدوي قد ينشر فعليًا على المنصة.
+- مشروع فرز التذاكر يرسل رسائل العملاء إلى OpenAI وGoogle Sheets وTelegram. عطّل الرد الآلي أولًا، واستخدم قنوات وجداول خاصة.
+- مشروع الترجمة يرسل النصوص إلى OpenAI للترجمة والمراجعة؛ لا ترسل معلومات سرية. سجل الاستخدام لا يحتفظ بنص الترجمة.
+- مشروع الملاحظات الصوتية يرسل الصوت إلى OpenAI، ويحفظ نص التفريغ الكامل في Google Sheets ويرسله مرة أخرى عبر Telegram. قيّد البوت بمعرّف محادثتك ولا تستخدمه لمحتوى حساس.
 - راجع ملفات workflow والصور قبل نشر المستودع للعامة؛ قد تحتوي على أسماء أو عناوين أو معرّفات موارد تخص حساباتك.
 - لا تضع مفاتيح API أو كلمات المرور أو ملفات الاعتماد السرية في GitHub.
 

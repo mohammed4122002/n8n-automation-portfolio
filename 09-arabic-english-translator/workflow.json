@@ -1,0 +1,635 @@
+{
+  "name": "09 - Arabic-English Translator Bot with QA",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "4db8cd7f-cb84-4739-b740-6d76de7b1184",
+      "name": "Telegram Message",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "9f578c88-5025-4ca5-b1a0-070333e14577",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const msg = $json.message || {};\nlet text = String(msg.text || msg.caption || '').trim();\nlet target = 'auto';\nlet tone = 'professional';\n\nconst cmd = text.match(/^\\/(\\w+)(?:@\\w+)?\\s*/);\nif (cmd) {\n  const c = cmd[1].toLowerCase();\n  text = text.slice(cmd[0].length).trim();\n  if (c === 'en' || c === 'ar') target = c;\n  if (c === 'casual') tone = 'casual';\n  if (c === 'start' || c === 'help') text = '';\n}\n\nreturn { json: {\n  chatId: msg.chat ? msg.chat.id : '',\n  messageId: msg.message_id || 0,\n  user: (msg.from && (msg.from.username || msg.from.first_name)) || 'user',\n  text: text.slice(0, 6000),\n  target,\n  tone,\n  isHelp: text.length === 0\n} };"
+      },
+      "id": "2bc27fbd-4aac-401a-ba9a-612202011e7a",
+      "name": "Parse Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1ebc7025-211a-4f4a-a5e9-a1f162353edd",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"message\": {\n    \"message_id\": 10,\n    \"chat\": { \"id\": 111 },\n    \"from\": { \"first_name\": \"Mohammed\", \"username\": \"mo\" },\n    \"text\": \"نطلق اليوم خدمة الأتمتة الجديدة لعملائنا في قطاع التعليم، وتشمل وكيل ذكاء اصطناعي يرد على أولياء الأمور على مدار الساعة.\"\n  }\n}",
+        "options": {}
+      },
+      "id": "5aba7f68-0b99-4263-8dc8-7ccdbc505460",
+      "name": "Sample Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isHelp }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f8f39d09-9246-4a37-944d-4335bbed8a0f",
+      "name": "Help Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "👋 <b>مترجم عربي ↔ إنجليزي احترافي</b>\n\nأرسل أي نص وسأترجمه تلقائيًا:\n• العربي ← إنجليزي\n• أي لغة أخرى ← عربي\n\nأوامر:\n/en نص — ترجمة إلى الإنجليزية\n/ar نص — ترجمة إلى العربية\n/casual نص — أسلوب ودّي غير رسمي\n\nأستخدم قاموس المصطلحات الخاص بك، وأفحص جودة كل ترجمة قبل إرسالها ✅",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "670ffa1c-b231-466d-8c72-361852b994b3",
+      "name": "Send Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        208
+      ],
+      "webhookId": "bf522009-d503-44a2-b8ba-5e72157f7ca4",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Translation Glossary"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Glossary"
+        },
+        "options": {}
+      },
+      "id": "bd305f10-9047-4f52-b24f-54ea16d3bf37",
+      "name": "Load Glossary",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        480
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const req = $('Parse Request').first().json;\nconst text = req.text.toLowerCase();\nconst terms = $input.all().map(i => i.json).filter(r => r && r.Arabic && r.English);\nconst hits = terms.filter(t => text.includes(String(t.Arabic).toLowerCase()) || text.includes(String(t.English).toLowerCase()));\nconst arabicChars = (req.text.match(/[\\u0600-\\u06FF]/g) || []).length;\nconst latinChars = (req.text.match(/[A-Za-z]/g) || []).length;\nconst detected = arabicChars >= latinChars ? 'ar' : 'other';\nconst target = req.target !== 'auto' ? req.target : (detected === 'ar' ? 'en' : 'ar');\nconst glossaryText = hits.length\n  ? hits.map(t => '- ' + t.Arabic + ' = ' + t.English + (t.Note ? ' (' + t.Note + ')' : '')).join('\\n')\n  : '(no glossary terms in this text)';\nreturn [{ json: { ...req, target, targetName: target === 'en' ? 'English' : 'Arabic (Modern Standard)', glossaryText, glossaryHits: hits.length } }];"
+      },
+      "id": "7ff02db9-5700-4c6a-92db-dda2d966b48e",
+      "name": "Match Glossary Terms",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Target language: {{ $json.targetName }}\nTone: {{ $json.tone }}\n\nMandatory glossary (use exactly these equivalents):\n{{ $json.glossaryText }}\n\nText to translate:\n\"\"\"{{ $json.text }}\"\"\"",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a senior Arabic-English translator for business and tech content. Translate meaning, not words: natural, fluent, culturally appropriate. Keep numbers, names, URLs, emojis, hashtags and line breaks. Brand and product names stay in Latin script. Always apply the mandatory glossary. Do not add or remove information. notes: one short Arabic sentence only if something was ambiguous, otherwise an empty string."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "41919ff7-5867-464a-b34b-39bfb31ee0a1",
+      "name": "Translate",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "bc81dd2f-5f2e-4c23-b655-add93398d17c",
+      "name": "Translator Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        704
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"source_language\": \"ar\", \"translation\": \"translated text\", \"notes\": \"short note about choices, or empty\" }"
+      },
+      "id": "70585008-c54c-44c3-b068-1213b51abbe8",
+      "name": "Translation Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Source text:\n\"\"\"{{ $('Match Glossary Terms').item.json.text }}\"\"\"\n\nTranslation ({{ $('Match Glossary Terms').item.json.targetName }}):\n\"\"\"{{ $json.output.translation }}\"\"\"\n\nGlossary:\n{{ $('Match Glossary Terms').item.json.glossaryText }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a strict translation reviewer. Compare source and translation for accuracy, omissions, additions, glossary compliance and fluency. Score 1-10. If score < 8, return an improved translation that fixes the issues; otherwise return the translation unchanged. issues: short Arabic bullet text or empty string."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "14ce6492-320c-4f3c-8c2a-2a5e81365032",
+      "name": "Quality Check",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1680,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "34f03d61-53d3-4956-b26e-2f21183c97d2",
+      "name": "Reviewer Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1648,
+        704
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \"score\": 9, \"issues\": \"Arabic list of problems or empty\", \"improved_translation\": \"same as input if score >= 8\" }"
+      },
+      "id": "8958361f-d91c-4680-93e2-2648e411fcbe",
+      "name": "Review Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1808,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const req = $('Match Glossary Terms').first().json;\nconst tr = $('Translate').first().json.output || {};\nconst qa = $input.first().json.output || {};\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst score = Number(qa.score) || 0;\nconst finalText = (score < 8 && qa.improved_translation) ? qa.improved_translation : tr.translation;\nconst badge = score >= 9 ? '🟢' : score >= 7 ? '🟡' : '🔴';\nconst footer = [badge + ' جودة: ' + score + '/10' + (score < 8 ? ' (تم تحسينها تلقائيًا)' : '') + (req.glossaryHits ? ' · 📘 ' + req.glossaryHits + ' مصطلح من القاموس' : '')];\nif (qa.issues) footer.push('ℹ️ ' + esc(qa.issues));\nif (tr.notes) footer.push('📝 ' + esc(tr.notes));\nconst body = esc(finalText);\nconst chunks = [];\nfor (let i = 0; i < body.length; i += 3500) chunks.push(body.slice(i, i + 3500));\nchunks[chunks.length - 1] += '\\n\\n' + footer.join('\\n');\nreturn chunks.map((text, i) => ({ json: { chatId: req.chatId, replyTo: i === 0 ? req.messageId : 0, text, user: req.user, source: tr.source_language, target: req.target, chars: req.text.length, score } }));"
+      },
+      "id": "85ec84ea-1f5d-4d6b-b128-52aa115271fe",
+      "name": "Format Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $('Match Glossary Terms').first().json.messageId }}"
+        }
+      },
+      "id": "5d228df3-27b3-46ee-948f-e697cfe33f30",
+      "name": "Send Translation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        400
+      ],
+      "webhookId": "442999db-2f03-4d53-a466-25cb754e38a8",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Translation Glossary"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $now.toFormat(\"yyyy-LL-dd HH:mm\") }}",
+            "User": "={{ $json.user }}",
+            "From": "={{ $json.source }}",
+            "To": "={{ $json.target }}",
+            "Characters": "={{ $json.chars }}",
+            "Quality Score": "={{ $json.score }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Characters",
+              "displayName": "Characters",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quality Score",
+              "displayName": "Quality Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ebf727c8-a861-49d0-b330-3633432e93be",
+      "name": "Log Translation",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2160,
+        608
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 09 - Arabic-English Translator Bot with QA\nA Telegram translator built for business content.\n\n- Auto direction: Arabic → English, anything else → Arabic. Commands: `/en`, `/ar`, `/casual`, `/help`.\n- Uses your own **glossary** from Google Sheets so brand and technical terms are always translated the same way.\n- A second AI pass **reviews** every translation (accuracy, omissions, glossary) and scores it 1-10; weak translations are improved automatically before sending.\n- Long texts are split to fit Telegram; usage is logged.\n\n**Sheet `Translation Glossary`:** tab `Glossary` (Arabic, English, Note) and tab `Log`.",
+        "height": 360,
+        "width": 620,
+        "color": 4
+      },
+      "id": "35d23215-4476-478d-83c7-26288346dc84",
+      "name": "Sticky Note 2c0e888a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Request": {
+      "main": [
+        [
+          {
+            "node": "Help Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Sample Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Message": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Help Request?": {
+      "main": [
+        [
+          {
+            "node": "Send Help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Glossary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Glossary": {
+      "main": [
+        [
+          {
+            "node": "Match Glossary Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Glossary Terms": {
+      "main": [
+        [
+          {
+            "node": "Translate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate": {
+      "main": [
+        [
+          {
+            "node": "Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translator Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translation Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Check": {
+      "main": [
+        [
+          {
+            "node": "Format Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviewer Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quality Check",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Quality Check",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Translation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Translation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "5ca9f6c0-4fca-45f4-ad02-2b4ab9937063",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "iD6D9hrB9CIZQWT2",
+  "tags": []
+}

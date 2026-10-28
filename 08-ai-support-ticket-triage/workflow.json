@@ -1,0 +1,1065 @@
+{
+  "name": "08 - AI Support Ticket Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-ticket",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "016bde39-d018-4c00-89e4-16c72509afa3",
+      "name": "Website Contact Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        336
+      ],
+      "webhookId": "62d72d13-c4cf-4677-be9c-4af364e469a5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w1",
+              "name": "channel",
+              "value": "web",
+              "type": "string"
+            },
+            {
+              "id": "w2",
+              "name": "name",
+              "value": "={{ $json.body?.name ?? $json.name ?? 'Customer' }}",
+              "type": "string"
+            },
+            {
+              "id": "w3",
+              "name": "email",
+              "value": "={{ $json.body?.email ?? $json.email ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "w4",
+              "name": "chatId",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "w5",
+              "name": "message",
+              "value": "={{ $json.body?.message ?? $json.message ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ade180d2-c8d6-4258-be93-d0a6fc0de4a6",
+      "name": "Normalize Web",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "k1",
+              "name": "supportChatId",
+              "value": "SUPPORT_TEAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "k2",
+              "name": "salesChatId",
+              "value": "SALES_TEAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "k3",
+              "name": "autoAnswerInquiries",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "k4",
+              "name": "businessName",
+              "value": "Code Build Impact",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "e7c6cad4-da1a-4f2e-9315-e0c68867875d",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "3f244222-0fa2-41f2-ba5e-390c3ac75832",
+      "name": "Telegram Customer Bot",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        528
+      ],
+      "webhookId": "2dc63540-96cc-4002-b831-94875dcb1b7c",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "channel",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "t2",
+              "name": "name",
+              "value": "={{ $json.message.from.first_name ?? 'Customer' }}",
+              "type": "string"
+            },
+            {
+              "id": "t3",
+              "name": "email",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "t4",
+              "name": "chatId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "t5",
+              "name": "message",
+              "value": "={{ $json.message.text ?? $json.message.caption ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0e106b97-0ede-411a-9975-ccc7f1e67a74",
+      "name": "Normalize Telegram",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        528
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "31f43de9-c8ad-44d6-b5ea-9d532d859ca6",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"channel\": \"manual\",\n  \"name\": \"سارة أحمد\",\n  \"email\": \"sara@example.com\",\n  \"chatId\": \"\",\n  \"message\": \"طلبت جهاز يوم 12 ولم يصل حتى الآن، وكل مرة أتصل لا أحد يرد. إذا لم يُحل الموضوع اليوم سألغي الطلب وأطلب استرداد المبلغ.\"\n}",
+        "options": {}
+      },
+      "id": "1c9d01f9-6cf4-4ce1-8a6e-297f33cb2a6a",
+      "name": "Sample Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json;\nconst rand = Math.random().toString(36).slice(2, 6).toUpperCase();\nconst message = String(j.message || '').replace(/\\s+/g, ' ').trim().slice(0, 4000);\nreturn { json: {\n  ...j,\n  ticketId: 'TCK-' + $now.toFormat('yyLLdd') + '-' + rand,\n  createdAt: $now.toFormat('yyyy-LL-dd HH:mm'),\n  message: message || '(رسالة فارغة)',\n  name: String(j.name || 'Customer').trim(),\n  email: String(j.email || '').trim().toLowerCase()\n} };"
+      },
+      "id": "07e12ffb-03e1-4ae5-ad91-163cdf43986d",
+      "name": "Prepare Ticket",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Channel: {{ $json.channel }}\nCustomer name: {{ $json.name }}\nMessage:\n\"\"\"{{ $json.message }}\"\"\"",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are the triage engine of a customer support desk for {{ $json.businessName }}.\nClassify the customer message.\n\ncategory: one of complaint | refund | order | inquiry | spam | other\n- complaint: unhappy with a product, delay, staff or service\n- refund: asks to cancel or get money back\n- order: wants to buy, book or place an order\n- inquiry: a question (price, hours, how-to, availability)\n- spam: ads, links, nonsense, unrelated promotions\npriority: urgent | high | normal | low (urgent = legal threat, safety, payment taken without service, very angry customer)\nsentiment: angry | negative | neutral | positive\nlanguage: ISO code of the customer message (ar, en, ...)\nsummary: ONE short Arabic sentence\nsuggested_reply: a polite reply in the customer language, max 80 words. Never invent prices, dates or policies; if you do not know, say a team member will follow up.\nconfidence: 0-1\nreasoning: one short English sentence\n\nExamples:\n\"وين طلبي؟ صار لي أسبوع\" -> complaint, high, negative\n\"How much is the monthly plan?\" -> inquiry, normal, neutral\n\"بدي ألغي الاشتراك وترجعولي المصاري\" -> refund, high, negative\n\"Buy followers cheap!!! bit.ly/x\" -> spam, low, neutral"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "ffbe5774-a70c-4cd3-9402-0bc32625aa59",
+      "name": "Classify Message",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        896,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "0a2ecb03-6b62-4d21-a449-18f2bd501ce9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        904,
+        760
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"complaint\",\n  \"priority\": \"high\",\n  \"sentiment\": \"angry\",\n  \"language\": \"ar\",\n  \"summary\": \"ملخص عربي في جملة واحدة\",\n  \"suggested_reply\": \"رد مقترح بلغة العميل\",\n  \"confidence\": 0.92,\n  \"reasoning\": \"why this category\"\n}"
+      },
+      "id": "110aa9ac-ebc2-4bde-a449-017d1cff4f84",
+      "name": "Ticket Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1032,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const tickets = $('Prepare Ticket').all();\nconst slaHours = { urgent: 1, high: 4, normal: 24, low: 48 };\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst out = [];\n\n$input.all().forEach((item, i) => {\n  const t = tickets[i].json;\n  const ai = item.json.output || {};\n  let category = String(ai.category || 'other').toLowerCase();\n  let priority = String(ai.priority || 'normal').toLowerCase();\n  const sentiment = String(ai.sentiment || 'neutral').toLowerCase();\n  const confidence = Number(ai.confidence) || 0;\n\n  // Rule-based escalation on top of the AI decision\n  if (/محامي|شكوى رسمية|احتيال|نصب|lawyer|legal|fraud|police/i.test(t.message)) priority = 'urgent';\n  if (sentiment === 'angry' && ['complaint', 'refund'].includes(category) && priority !== 'urgent') priority = 'high';\n  if (category === 'spam') priority = 'low';\n  if (!slaHours[priority]) priority = 'normal';\n\n  const needsReview = category === 'other' || confidence < 0.6;\n  const autoAnswered = Boolean(t.autoAnswerInquiries) && category === 'inquiry' && confidence >= 0.8;\n  const dueAt = $now.plus({ hours: slaHours[priority] }).toFormat('yyyy-LL-dd HH:mm');\n  const isArabic = String(ai.language || 'ar').startsWith('ar');\n\n  let customerReply;\n  if (category === 'spam') customerReply = isArabic ? 'تم استلام رسالتك.' : 'Your message was received.';\n  else if (autoAnswered) customerReply = ai.suggested_reply + (isArabic ? '\\n\\nرقم التذكرة: ' : '\\n\\nTicket: ') + t.ticketId;\n  else customerReply = isArabic\n    ? 'شكرًا لتواصلك يا ' + t.name + '. استلمنا رسالتك برقم ' + t.ticketId + ' وسيتواصل معك فريقنا خلال ' + slaHours[priority] + ' ساعة كحد أقصى.'\n    : 'Thanks ' + t.name + '. We received your message (ticket ' + t.ticketId + ') and will get back to you within ' + slaHours[priority] + ' hours.';\n\n  const icon = { urgent: '🚨', high: '🔴', normal: '🟡', low: '🟢' }[priority];\n  const alertText = [\n    icon + ' <b>تذكرة جديدة ' + esc(t.ticketId) + '</b>',\n    '📂 ' + esc(category) + ' | ⚡ ' + esc(priority) + ' | 😶 ' + esc(sentiment),\n    '👤 ' + esc(t.name) + ' (' + esc(t.channel) + (t.email ? ' · ' + esc(t.email) : '') + ')',\n    '📝 ' + esc(ai.summary),\n    '⏰ الرد قبل: ' + dueAt,\n    '',\n    '<b>الرسالة:</b> ' + esc(t.message.slice(0, 600)),\n    '',\n    '<b>رد مقترح:</b> ' + esc(ai.suggested_reply)\n  ].join('\\n');\n\n  out.push({ json: {\n    ticketId: t.ticketId, createdAt: t.createdAt, channel: t.channel, name: t.name, email: t.email, chatId: t.chatId,\n    message: t.message, category, priority, sentiment, language: ai.language || '', summary: ai.summary || '',\n    suggestedReply: ai.suggested_reply || '', confidence, reasoning: ai.reasoning || '', slaHours: slaHours[priority], dueAt,\n    needsReview, autoAnswered, status: autoAnswered ? 'auto-answered' : (category === 'spam' ? 'closed' : 'open'),\n    customerReply, alertText, supportChatId: t.supportChatId, salesChatId: t.salesChatId\n  } });\n});\nreturn out;"
+      },
+      "id": "74f259dd-05de-41f6-9a83-e36ff8359a74",
+      "name": "Apply SLA and Rules",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Support Tickets"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tickets"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket ID": "={{ $json.ticketId }}",
+            "Created": "={{ $json.createdAt }}",
+            "Channel": "={{ $json.channel }}",
+            "Name": "={{ $json.name }}",
+            "Contact": "={{ $json.email || $json.chatId }}",
+            "Category": "={{ $json.category }}",
+            "Priority": "={{ $json.priority }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Summary": "={{ $json.summary }}",
+            "Message": "={{ $json.message }}",
+            "Due At": "={{ $json.dueAt }}",
+            "Status": "={{ $json.status }}",
+            "Confidence": "={{ $json.confidence }}"
+          },
+          "schema": [
+            {
+              "id": "Ticket ID",
+              "displayName": "Ticket ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created",
+              "displayName": "Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channel",
+              "displayName": "Channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact",
+              "displayName": "Contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due At",
+              "displayName": "Due At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "af5ea01a-40a3-4137-b29c-231859914757",
+      "name": "Log Ticket",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1472,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "spam"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Spam"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "complaint"
+                  },
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "refund"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Complaint / Refund"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.category }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "order"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Order"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.needsReview }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Needs Review"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Auto-answered"
+        }
+      },
+      "id": "ca3547fd-824a-46d9-a812-c7444a789273",
+      "name": "Route by Category",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        512
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "13e507fc-e2f4-4d36-a3b8-5062d18243e8",
+      "name": "Discard Spam",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.supportChatId }}",
+        "text": "={{ $json.alertText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "14629f5b-4024-4242-97d0-5ce129def42c",
+      "name": "Alert Support Team",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        336
+      ],
+      "webhookId": "f2d103a2-b463-4d4d-94aa-12200ab08cb4",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.salesChatId }}",
+        "text": "=🛒 فرصة بيع جديدة\n{{ $json.alertText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "4e85e8b6-7fde-4fa0-8352-db4b3410bd5b",
+      "name": "Notify Sales",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        528
+      ],
+      "webhookId": "96ca570f-198d-4953-9ca4-4d6c27490369",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.supportChatId }}",
+        "text": "=🧐 تحتاج مراجعة بشرية (ثقة {{ Math.round($json.confidence * 100) }}%)\n{{ $json.alertText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "303caee6-e3be-4402-92ac-2b5d6e8927d4",
+      "name": "Send to Manual Review",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        720
+      ],
+      "webhookId": "cfdb2a43-e36a-4596-a7f9-e20afeb8ef9d",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "43bd13da-b3db-4314-9f0e-b8cb91983403",
+      "name": "Auto-answered",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.channel }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "telegram"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.channel }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "web"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Website"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "12b2d10a-60b6-484e-a642-df6be9a33816",
+      "name": "Reply by Channel",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.customerReply.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "bbd76970-3ca2-4e41-a392-a772fcce9555",
+      "name": "Reply on Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        1104
+      ],
+      "webhookId": "19912f08-2300-4245-94ed-1219442df739",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, ticketId: $json.ticketId, status: $json.status, message: $json.customerReply }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "dcf6af14-b511-47b1-8a6d-d62987f1e42f",
+      "name": "Respond to Website",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1696,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Apply SLA and Rules').item.json.email }}",
+        "subject": "=[{{ $('Apply SLA and Rules').item.json.ticketId }}] استلمنا رسالتك",
+        "emailType": "text",
+        "message": "={{ $('Apply SLA and Rules').item.json.customerReply }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ddefc326-842c-4d49-9f13-6af919259e8f",
+      "name": "Email Acknowledgement",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        1296
+      ],
+      "webhookId": "00bccb52-e610-4e84-a3c1-52f755bfd7d8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 08 - AI Support Ticket Triage\nOne inbox for the website form and the Telegram bot.\n\n1. Each message becomes a ticket with an ID.\n2. AI classifies it (complaint, refund, order, inquiry, spam), sets priority and sentiment, writes an Arabic summary and a suggested reply.\n3. Code rules escalate legal threats and angry complaints, set the SLA deadline and flag low-confidence results for a human.\n4. Every ticket is logged in Google Sheets, routed to the right team on Telegram, and the customer gets an instant reply on the same channel. Clear FAQs are answered automatically.\n\n**Website:** POST JSON `{name, email, message}` to the webhook URL.",
+        "height": 400,
+        "width": 640,
+        "color": 4
+      },
+      "id": "2785f75d-f434-481d-af63-1d98b34fc66f",
+      "name": "Sticky Note 1dea60ad",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Website Contact Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Web": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Prepare Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Customer Bot": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Telegram": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Sample Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Message": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Ticket": {
+      "main": [
+        [
+          {
+            "node": "Classify Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Message": {
+      "main": [
+        [
+          {
+            "node": "Apply SLA and Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify Message",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Classify Message",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply SLA and Rules": {
+      "main": [
+        [
+          {
+            "node": "Log Ticket",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route by Category",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Reply by Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Category": {
+      "main": [
+        [
+          {
+            "node": "Discard Spam",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Sales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send to Manual Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auto-answered",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply by Channel": {
+      "main": [
+        [
+          {
+            "node": "Reply on Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Website": {
+      "main": [
+        [
+          {
+            "node": "Email Acknowledgement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "b46f736d-d8b9-4417-b945-2cea9c7741f2",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "KdJIsPrtwKXymLhu",
+  "tags": []
+}

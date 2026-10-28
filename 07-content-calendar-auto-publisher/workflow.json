@@ -1,0 +1,908 @@
+{
+  "name": "07 - Content Calendar Auto-Publisher",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "605acaca-438d-4f8d-a1fa-2c94848a41f6",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "telegramChannelId",
+              "value": "@your_channel",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "adminChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "maxPostsPerRun",
+              "value": 5,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a177d72-7c56-48ad-8c36-a54cd7fb6ba1",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        800
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d008737a-be49-4238-862d-ccfff10cc1f2",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Content Calendar"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "scheduled"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "94de1b8b-5004-4cd3-bc3c-710a5c260977",
+      "name": "Read Scheduled Posts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        800
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst zone = $now.zoneName;\nconst formats = ['yyyy-LL-dd HH:mm', 'yyyy-LL-dd H:mm', 'yyyy-LL-dd HH:mm:ss', 'dd/LL/yyyy HH:mm', 'd/L/yyyy H:mm'];\nconst parseDate = (value) => {\n  if (typeof value === 'number') return DateTime.fromMillis(Math.round((value - 25569) * 86400000), { zone: 'UTC' }).setZone(zone, { keepLocalTime: true });\n  const s = String(value || '').trim();\n  for (const f of formats) { const d = DateTime.fromFormat(s, f, { zone }); if (d.isValid) return d; }\n  const iso = DateTime.fromISO(s, { zone });\n  return iso.isValid ? iso : null;\n};\nconst platformMap = { linkedin: 'linkedin', 'linked in': 'linkedin', x: 'x', twitter: 'x', telegram: 'telegram' };\nconst esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst due = [];\nfor (const item of $input.all()) {\n  const r = item.json;\n  if (!r['Post ID'] || String(r.Status || '').toLowerCase() !== 'scheduled') continue;\n  const when = parseDate(r['Publish At']);\n  if (!when || when > $now) continue;\n  const text = String(r.Text || '').trim();\n  const platform = platformMap[String(r.Platform || '').trim().toLowerCase()] || String(r.Platform || 'unknown').toLowerCase();\n  due.push({\n    postId: String(r['Post ID']),\n    platform,\n    text,\n    textHtml: esc(text),\n    publishAt: when.toFormat('yyyy-LL-dd HH:mm'),\n    charCount: text.length,\n    tooLongForX: platform === 'x' && text.length > 280,\n    emptyText: text.length === 0\n  });\n}\ndue.sort((a, b) => a.publishAt.localeCompare(b.publishAt));\nreturn due.slice(0, Number(cfg.maxPostsPerRun) || 5).map(json => ({ json }));"
+      },
+      "id": "85592e29-d2da-421a-977e-a0f4fb749b13",
+      "name": "Pick Due Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst published = rows.filter(r => r.Status === 'published');\nconst failed = rows.filter(r => r.Status === 'failed');\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst lines = ['🗓️ <b>تقرير النشر المجدول</b> — ' + $now.toFormat('yyyy-LL-dd HH:mm'), '', '✅ نُشر: ' + published.length + ' | ❌ فشل: ' + failed.length];\nfor (const r of published) lines.push('• ' + esc(r['Post ID']) + (r['Post URL'] ? ' — <a href=\"' + esc(r['Post URL']) + '\">رابط</a>' : ''));\nfor (const r of failed) lines.push('⚠️ ' + esc(r['Post ID']) + ': ' + esc(r.Error));\nreturn [{ json: { total: rows.length, failedCount: failed.length, text: lines.join('\\n') } }];"
+      },
+      "id": "6e3d7700-97ba-403e-8eaa-e7580be66527",
+      "name": "Run Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.adminChatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "4ec3f5a2-33e0-4376-a6ca-f269a8ce2d76",
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        160
+      ],
+      "webhookId": "7443d150-f7c7-4005-89b4-eb2b4a4af3c0",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.platform }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "linkedin"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "LinkedIn"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.platform }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "x"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "X"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.platform }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "telegram"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Telegram"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unsupported"
+        }
+      },
+      "id": "cb75b80a-88cc-4e61-8b93-e31f15b265fc",
+      "name": "Route by Platform",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "person": "<__PLACEHOLDER_VALUE__Select your LinkedIn profile__>",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "id": "c6919cae-6770-41c1-b5ec-272de5d880c8",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        304
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "postId",
+              "value": "={{ $('Loop Over Posts').item.json.postId }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "status",
+              "value": "published",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "publishedAt",
+              "value": "={{ $now.toFormat(\"yyyy-LL-dd HH:mm\") }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "postUrl",
+              "value": "={{ $json.urn ? 'https://www.linkedin.com/feed/update/' + $json.urn : ($json.result?.message_id ? 'https://t.me/' + String($('Config').first().json.telegramChannelId).replace('@', '') + '/' + $json.result.message_id : ($json.id ? 'https://x.com/i/web/status/' + $json.id : '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "error",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2aaf9501-70d9-4b0e-a66d-5ef83227f83d",
+      "name": "Mark Published",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2144,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "postId",
+              "value": "={{ $('Loop Over Posts').item.json.postId }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "status",
+              "value": "failed",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "publishedAt",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "postUrl",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "error",
+              "value": "={{ String($json.error?.message ?? $json.error ?? $json.message ?? 'Unknown error').slice(0, 300) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a349b3a0-881f-4198-b928-38e13b52a94a",
+      "name": "Mark Failed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2144,
+        928
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.tooLongForX }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6ce03165-2f6b-45f0-a5c2-c7a513e72c15",
+      "name": "Too Long for X?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Rewrite the post for X (Twitter) in the SAME language as the input. Hard limit: 270 characters including spaces and hashtags. Keep the core message, the hook and at most 2 hashtags. Do not add quotes, emojis that were not there, or new claims. Return only the final post text."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "066786e0-f749-41da-9933-24552fdeace5",
+      "name": "Shorten for X",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1568,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "5f5a5485-fea9-42b5-93ad-e9492eb0434f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1640,
+        792
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text.slice(0, 280) }}",
+        "additionalFields": {}
+      },
+      "id": "3c988f42-7c7e-4a13-9a17-9d9ecf30b245",
+      "name": "Post to X",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        704
+      ],
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "UT17KbhriAlIxILf",
+          "name": "X account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.telegramChannelId }}",
+        "text": "={{ $json.textHtml }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "071ee5d5-ad30-4eae-96f6-3d480bf7bedf",
+      "name": "Post to Telegram Channel",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        960
+      ],
+      "webhookId": "0ee4b1ba-1015-4595-a98e-5ecb39f8a79a",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "error",
+              "value": "=Unsupported platform: {{ $json.platform }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e6f0dc37-2d7c-402e-9371-59d6f81fdc54",
+      "name": "Unsupported Platform",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ded09f05-fcac-4dba-b4cc-f087ce0a974d",
+      "name": "Loop Over Posts",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Content Calendar"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Post ID"
+          ],
+          "value": {
+            "Post ID": "={{ $json.postId }}",
+            "Status": "={{ $json.status }}",
+            "Published At": "={{ $json.publishedAt }}",
+            "Post URL": "={{ $json.postUrl }}",
+            "Error": "={{ $json.error }}"
+          },
+          "schema": [
+            {
+              "id": "Post ID",
+              "displayName": "Post ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published At",
+              "displayName": "Published At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Post URL",
+              "displayName": "Post URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Error",
+              "displayName": "Error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "4df8002e-6cf4-48cc-a2fe-51c33bb10dc6",
+      "name": "Update Calendar Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        928
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 07 - Content Calendar Auto-Publisher\nWrite your posts once in Google Sheets and let n8n publish them on time.\n\n- Runs every 15 minutes, picks rows with `Status = scheduled` whose `Publish At` has passed.\n- Routes each post to **LinkedIn**, **X** or a **Telegram channel**.\n- Posts longer than 280 chars are rewritten by AI for X automatically.\n- Every row is updated to `published` (with the post URL) or `failed` (with the error); one bad post never stops the others.\n- A short run report is sent to the admin on Telegram.\n\n**Sheet `Content Calendar` → tab `Posts`:** Post ID, Publish At (yyyy-MM-dd HH:mm), Platform, Text, Status, Published At, Post URL, Error.",
+        "height": 400,
+        "width": 640,
+        "color": 4
+      },
+      "id": "de6d6870-10f2-4e1c-a616-c12b554d792e",
+      "name": "Sticky Note f3685392",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        96,
+        224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read Scheduled Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Scheduled Posts": {
+      "main": [
+        [
+          {
+            "node": "Pick Due Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Due Posts": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Summary": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Platform": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Too Long for X?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to Telegram Channel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unsupported Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Mark Published",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Published": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Failed": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Too Long for X?": {
+      "main": [
+        [
+          {
+            "node": "Shorten for X",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shorten for X": {
+      "main": [
+        [
+          {
+            "node": "Post to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Shorten for X",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to X": {
+      "main": [
+        [
+          {
+            "node": "Mark Published",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Telegram Channel": {
+      "main": [
+        [
+          {
+            "node": "Mark Published",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unsupported Platform": {
+      "main": [
+        [
+          {
+            "node": "Mark Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Posts": {
+      "main": [
+        [
+          {
+            "node": "Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "c9c3a2a3-31fe-497e-9402-e40594198b2b",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "GUBJSjtiTok70rUG",
+  "tags": []
+}

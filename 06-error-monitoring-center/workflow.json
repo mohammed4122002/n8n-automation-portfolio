@@ -1,0 +1,740 @@
+{
+  "name": "06 - Error Monitoring Center",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "971b0a5d-bbba-4ea6-84ea-7ccbc76fb460",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-chat",
+              "name": "telegramChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "cfg-email",
+              "name": "alertEmail",
+              "value": "you@example.com",
+              "type": "string"
+            },
+            {
+              "id": "cfg-window",
+              "name": "dedupeWindowMinutes",
+              "value": 30,
+              "type": "number"
+            },
+            {
+              "id": "cfg-critical",
+              "name": "criticalWorkflows",
+              "value": "Client Intake, Invoice",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6e20a556-1c7d-4ace-a3ea-8adc7eb613e9",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "cfd2857e-224a-4fb1-920f-89d3b53d1083",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"execution\": {\n    \"id\": \"4821\",\n    \"url\": \"https://your-n8n.app.n8n.cloud/workflow/abc123/executions/4821\",\n    \"retryOf\": null,\n    \"error\": {\n      \"message\": \"401 - Unauthorized: invalid credentials\",\n      \"stack\": \"NodeApiError: 401 - Unauthorized\",\n      \"node\": { \"name\": \"Get Sales Rows\" }\n    },\n    \"lastNodeExecuted\": \"Get Sales Rows\",\n    \"mode\": \"trigger\"\n  },\n  \"workflow\": { \"id\": \"abc123\", \"name\": \"04 - Daily Sales Report to Telegram\" }\n}",
+        "options": {}
+      },
+      "id": "a16c6cd9-7550-4906-8c8e-fd7874feade2",
+      "name": "Sample Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $input.first().json;\nconst exec = src.execution || {};\nconst trig = src.trigger || {};\nconst err = exec.error || trig.error || {};\nconst wf = src.workflow || {};\n\nconst message = String(err.message || err.description || 'Unknown error').slice(0, 900);\nconst failedNode = (err.node && err.node.name) || exec.lastNodeExecuted || (trig.error ? 'Trigger' : 'Unknown');\nconst workflowName = wf.name || 'Unknown workflow';\n\nconst rules = [\n  { category: 'auth', severity: 'critical', re: /\\b(401|403)\\b|unauthori[sz]ed|forbidden|invalid credentials|invalid_grant|token (has )?expired|permission/i,\n    hint: 'تحقق من بيانات الاعتماد أو أعد ربط الحساب (OAuth).' },\n  { category: 'rate_limit', severity: 'high', re: /\\b429\\b|rate.?limit|too many requests|quota/i,\n    hint: 'خفّف عدد الطلبات أو أضف Wait بين الدفعات.' },\n  { category: 'server', severity: 'high', re: /\\b5\\d\\d\\b|service unavailable|bad gateway|internal server error/i,\n    hint: 'الخدمة الخارجية متعطلة مؤقتًا؛ فعّل Retry On Fail.' },\n  { category: 'network', severity: 'medium', re: /timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|socket hang up/i,\n    hint: 'مشكلة اتصال أو مهلة؛ زد مهلة الطلب أو أعد المحاولة.' },\n  { category: 'data', severity: 'medium', re: /cannot read propert|undefined|is not a function|invalid json|unexpected token|required|missing|not found/i,\n    hint: 'البيانات الواردة ناقصة أو بشكل مختلف؛ راجع آخر مدخلات العقدة.' }\n];\nconst match = rules.find(r => r.re.test(message)) || { category: 'unknown', severity: 'high', hint: 'افتح التنفيذ وراجع العقدة الفاشلة.' };\n\nconst cfg = $('Config').first().json;\nconst criticalList = String(cfg.criticalWorkflows || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);\nlet severity = match.severity;\nif (criticalList.some(name => workflowName.toLowerCase().includes(name))) severity = 'critical';\n\nconst normalized = (workflowName + '|' + failedNode + '|' + message.toLowerCase().replace(/[0-9a-f]{8,}/g, '#').replace(/\\d+/g, '#')).slice(0, 300);\nlet hash = 5381;\nfor (let i = 0; i < normalized.length; i++) hash = ((hash << 5) + hash + normalized.charCodeAt(i)) >>> 0;\nconst fingerprint = hash.toString(16).padStart(8, '0');\n\nreturn [{ json: {\n  errorId: 'ERR-' + $now.toFormat('yyyyLLdd-HHmmss') + '-' + fingerprint.slice(0, 4),\n  time: $now.toFormat('yyyy-LL-dd HH:mm:ss'),\n  workflowName,\n  workflowId: wf.id || '',\n  executionId: exec.id || '',\n  executionUrl: exec.url || '',\n  mode: exec.mode || trig.mode || '',\n  isRetry: Boolean(exec.retryOf),\n  failedNode,\n  message,\n  category: match.category,\n  severity,\n  hint: match.hint,\n  fingerprint\n} }];"
+      },
+      "id": "c2acd92b-68d1-4895-a29e-360a6867e8b8",
+      "name": "Normalize and Classify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "=",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Errors"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Fingerprint",
+              "lookupValue": "={{ $json.fingerprint }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c8653fa-9307-4810-9f9f-678ddaacbe0f",
+      "name": "Find Same Fingerprint",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        400
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rec = $('Normalize and Classify').first().json;\nconst cfg = $('Config').first().json;\nconst windowMin = Number(cfg.dedupeWindowMinutes) || 30;\nconst now = $now;\n\nconst previous = $input.all().map(i => i.json).filter(r => r && r.Time);\nconst recent = previous.filter(r => {\n  const t = DateTime.fromFormat(String(r.Time), 'yyyy-LL-dd HH:mm:ss', { zone: now.zoneName });\n  return t.isValid && now.diff(t, 'minutes').minutes <= windowMin;\n});\nconst occurrences = previous.length + 1;\nconst shouldAlert = recent.length === 0 || rec.severity === 'critical' && recent.length % 5 === 0;\n\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst icons = { critical: '🔴', high: '🟠', medium: '🟡', low: '🟢' };\nconst labels = { critical: 'حرج', high: 'مرتفع', medium: 'متوسط', low: 'منخفض' };\n\nconst lines = [\n  icons[rec.severity] + ' <b>تنبيه خطأ في n8n</b> | ' + labels[rec.severity],\n  '',\n  '⚙️ <b>Workflow:</b> ' + esc(rec.workflowName),\n  '🧩 <b>العقدة:</b> ' + esc(rec.failedNode),\n  '🏷️ <b>النوع:</b> ' + esc(rec.category),\n  '💬 <b>الرسالة:</b> <code>' + esc(rec.message.slice(0, 350)) + '</code>',\n  '💡 <b>اقتراح:</b> ' + esc(rec.hint),\n  '🔁 <b>تكرر:</b> ' + occurrences + ' مرة (آخر ' + windowMin + ' دقيقة: ' + (recent.length + 1) + ')',\n  '🆔 ' + esc(rec.errorId)\n];\nif (rec.executionUrl) lines.push('', '<a href=\"' + esc(rec.executionUrl) + '\">فتح التنفيذ ←</a>');\n\nconst emailHtml = '<div dir=\"rtl\" style=\"font-family:Arial,sans-serif\">' + lines.join('<br>') + '</div>';\n\nreturn [{ json: { ...rec, occurrences, recentCount: recent.length, shouldAlert, alerted: shouldAlert ? 'yes' : 'suppressed', telegramText: lines.join('\\n'), emailHtml, telegramChatId: cfg.telegramChatId, alertEmail: cfg.alertEmail } }];"
+      },
+      "id": "093b0312-d855-4032-8c46-7fa353be2dfe",
+      "name": "Deduplicate and Build Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "n8n Error Log"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Errors"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Time": "={{ $json.time }}",
+            "Error ID": "={{ $json.errorId }}",
+            "Workflow": "={{ $json.workflowName }}",
+            "Failed Node": "={{ $json.failedNode }}",
+            "Severity": "={{ $json.severity }}",
+            "Category": "={{ $json.category }}",
+            "Message": "={{ $json.message }}",
+            "Fingerprint": "={{ $json.fingerprint }}",
+            "Execution URL": "={{ $json.executionUrl }}",
+            "Alerted": "={{ $json.alerted }}"
+          },
+          "schema": [
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Error ID",
+              "displayName": "Error ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Workflow",
+              "displayName": "Workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Failed Node",
+              "displayName": "Failed Node",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fingerprint",
+              "displayName": "Fingerprint",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Execution URL",
+              "displayName": "Execution URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alerted",
+              "displayName": "Alerted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "e8ea81d7-a28c-43c3-903b-b8a8ec3d38cc",
+      "name": "Log to Error Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.shouldAlert }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "191504a4-77e2-498d-a5c2-74d52923124d",
+      "name": "Should Alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "={{ $json.telegramText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "97f6064c-7bbb-4356-bf94-e79d19865742",
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        384
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "webhookId": "c124708e-1f76-45f1-a68b-0431826b4ac0",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Deduplicate and Build Alert').item.json.severity }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "critical"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "317eb450-daf9-4e0d-ad9d-de6d74b4a9ea",
+      "name": "Critical?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1584,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Deduplicate and Build Alert').item.json.alertEmail }}",
+        "subject": "=🔴 [n8n] خطأ حرج في {{ $('Deduplicate and Build Alert').item.json.workflowName }}",
+        "message": "={{ $('Deduplicate and Build Alert').item.json.emailHtml }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "n8n Error Monitor"
+        }
+      },
+      "id": "1af1aa10-46d7-4369-bdfd-f66f08bb3e00",
+      "name": "Email Critical Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1824,
+        560
+      ],
+      "webhookId": "2f863fb7-dbf8-42da-a77d-fcd75769229b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20
+            }
+          ]
+        }
+      },
+      "id": "4f9343f9-aaba-45ba-acc8-a0d5fda3e906",
+      "name": "Every Day 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dg-chat",
+              "name": "telegramChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "19373c23-1269-4b00-bce8-4ff39ab89292",
+      "name": "Digest Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "n8n Error Log"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Errors"
+        },
+        "options": {}
+      },
+      "id": "74fbc9b6-5324-45c4-b33e-7a7b63c234b6",
+      "name": "Read Error Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        912
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const since = $now.minus({ hours: 24 });\nconst rows = $input.all().map(i => i.json).filter(r => r && r.Time).filter(r => {\n  const t = DateTime.fromFormat(String(r.Time), 'yyyy-LL-dd HH:mm:ss', { zone: $now.zoneName });\n  return t.isValid && t >= since;\n});\n\nconst count = (key) => rows.reduce((acc, r) => { const k = r[key] || 'unknown'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});\nconst bySeverity = count('Severity');\nconst byWorkflow = Object.entries(count('Workflow')).sort((a, b) => b[1] - a[1]).slice(0, 5);\nconst byCategory = Object.entries(count('Category')).sort((a, b) => b[1] - a[1]);\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nlet text;\nif (rows.length === 0) {\n  text = '✅ <b>تقرير الأخطاء اليومي</b> — ' + $now.toFormat('yyyy-LL-dd') + '\\n\\nلا توجد أخطاء خلال آخر 24 ساعة. كل الـ workflows تعمل بسلام.';\n} else {\n  text = [\n    '📊 <b>تقرير الأخطاء اليومي</b> — ' + $now.toFormat('yyyy-LL-dd'),\n    '',\n    'إجمالي الأخطاء: <b>' + rows.length + '</b>',\n    '🔴 حرج: ' + (bySeverity.critical || 0) + ' | 🟠 مرتفع: ' + (bySeverity.high || 0) + ' | 🟡 متوسط: ' + (bySeverity.medium || 0),\n    '',\n    '<b>الأكثر تعطلًا:</b>',\n    ...byWorkflow.map(([wf, n], i) => (i + 1) + '. ' + esc(wf) + ' — ' + n),\n    '',\n    '<b>حسب النوع:</b> ' + byCategory.map(([c, n]) => esc(c) + ' (' + n + ')').join('، ')\n  ].join('\\n');\n}\nreturn [{ json: { text, total: rows.length, telegramChatId: $('Digest Config').first().json.telegramChatId } }];"
+      },
+      "id": "85b3ef61-c1b9-4ea9-9dc1-2db18f25e4c3",
+      "name": "Build Daily Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "497b5313-7dd5-4347-812e-ca437f5f0b5b",
+      "name": "Send Daily Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        912
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "webhookId": "4557f54b-a13c-43a4-b0c5-098f3c43b2b8",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 06 - Error Monitoring Center\nCentral **Error Workflow** for all your n8n workflows.\n\n1. Any failing workflow (that selects this one as its *Error workflow*) lands here.\n2. The error is normalized, classified (auth, rate limit, server, network, data) and given a severity + fingerprint.\n3. Same error within the dedupe window is logged but **not re-alerted** (no alert storms).\n4. Telegram alert with a fix hint and execution link; **critical** errors also go by email.\n5. Every evening a digest summarizes the last 24h.\n\n**Setup:** fill Config + Digest Config, pick the sheet `n8n Error Log` (tab `Errors`), then in each workflow: Settings → Error workflow → this workflow.",
+        "height": 380,
+        "width": 620,
+        "color": 4
+      },
+      "id": "9b06e579-2ea3-43f0-8857-cbbb168736a6",
+      "name": "Sticky Note 287927ba",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize and Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Sample Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Error": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and Classify": {
+      "main": [
+        [
+          {
+            "node": "Find Same Fingerprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Same Fingerprint": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate and Build Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate and Build Alert": {
+      "main": [
+        [
+          {
+            "node": "Log to Error Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Should Alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Alert?": {
+      "main": [
+        [
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Alert": {
+      "main": [
+        [
+          {
+            "node": "Critical?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critical?": {
+      "main": [
+        [
+          {
+            "node": "Email Critical Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Day 20:00": {
+      "main": [
+        [
+          {
+            "node": "Digest Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Digest Config": {
+      "main": [
+        [
+          {
+            "node": "Read Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Error Log": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Digest": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "a5ac0e3d-ecc7-4fa9-8269-20e930836aae",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [
+    {
+      "id": "5808dd06-a25c-4ba7-8a4f-8b143b8a4417",
+      "name": "Classify and deduplicate",
+      "nodeIds": [
+        "c2acd92b-68d1-4895-a29e-360a6867e8b8",
+        "8c8653fa-9307-4810-9f9f-678ddaacbe0f",
+        "093b0312-d855-4032-8c46-7fa353be2dfe"
+      ],
+      "description": "Severity, category, fingerprint and alert-storm protection"
+    },
+    {
+      "id": "cf1de86b-966d-4517-ad3a-66d4ec1516c8",
+      "name": "Daily digest",
+      "nodeIds": [
+        "19373c23-1269-4b00-bce8-4ff39ab89292",
+        "74fbc9b6-5324-45c4-b33e-7a7b63c234b6",
+        "85b3ef61-c1b9-4ea9-9dc1-2db18f25e4c3",
+        "497b5313-7dd5-4347-812e-ca437f5f0b5b"
+      ],
+      "description": "Summary of the last 24 hours every evening"
+    }
+  ],
+  "id": "b3kNJtEXbYki2DMs",
+  "tags": []
+}

@@ -1,0 +1,650 @@
+{
+  "name": "10 - Voice Notes to Tasks",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "1605dd85-c4c8-4200-80cc-7378f72ac702",
+      "name": "Telegram Voice Note",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "a94a9ec5-2772-4953-b0ce-e9e8be12d1e6",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.message.voice ?? $json.message.audio)?.duration ?? -1 }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "rightValue": 0
+                  },
+                  {
+                    "leftValue": "={{ ($json.message.voice ?? $json.message.audio)?.duration ?? 99999 }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lte"
+                    },
+                    "rightValue": 900
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.message.voice ?? $json.message.audio)?.duration ?? -1 }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    },
+                    "rightValue": 900
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Too Long"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Not Voice"
+        }
+      },
+      "id": "3e376613-2aa3-4007-8d7e-9bd9126e50f0",
+      "name": "Message Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ ($json.message.voice ?? $json.message.audio).file_id }}",
+        "additionalFields": {}
+      },
+      "id": "26cb1bdf-0a8b-45c2-a50f-d38a61a63b5f",
+      "name": "Download Voice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        400
+      ],
+      "webhookId": "df7c0aaf-535b-4baf-812e-ffdecc287ccc",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "756ff202-adc7-4ef9-93f0-7d2633fd8c0e",
+      "name": "Transcribe Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Today is {{ $now.toFormat(\"cccc yyyy-LL-dd\") }} (timezone {{ $now.zoneName }}).\n\nTranscript of a voice note:\n\"\"\"{{ $json.text }}\"\"\"",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You turn voice notes (Arabic dialects or English) into clear notes. Write everything in Arabic (Modern Standard), keep names and technical terms as spoken.\n- title: max 8 words\n- type: meeting | idea | reminder | brainstorm | other\n- summary: 2-6 short bullet points\n- decisions: only explicit decisions, else []\n- action_items: concrete tasks only. owner = person named, else \"أنا\". Convert relative dates (بكرا، الخميس الجاي، next week) to YYYY-MM-DD using today's date; if no date is mentioned use \"\". priority: high | normal | low.\nNever invent tasks, people or dates that are not in the transcript."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "80110799-67f6-41a4-bfa7-935d47ff8c0b",
+      "name": "Extract Summary and Tasks",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        944,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "833edb17-695c-4ada-9219-38c8d8c9dbb5",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        624
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"عنوان قصير\",\n  \"type\": \"meeting\",\n  \"summary\": [\"نقطة 1\", \"نقطة 2\"],\n  \"decisions\": [\"قرار 1\"],\n  \"action_items\": [\n    { \"task\": \"إرسال العرض للعميل\", \"owner\": \"محمد\", \"due_date\": \"2026-10-28\", \"priority\": \"high\" }\n  ],\n  \"language\": \"ar\"\n}"
+      },
+      "id": "d45dd8ca-30f4-4c3e-bd91-f5726c2ea6c2",
+      "name": "Notes Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $('Telegram Voice Note').first().json.message;\nconst transcript = $('Transcribe Audio').first().json.text || '';\nconst o = $input.first().json.output || {};\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst typeIcon = { meeting: '👥', idea: '💡', reminder: '⏰', brainstorm: '🧠' }[o.type] || '🗒️';\nconst tasks = (o.action_items || []).filter(t => t && t.task).map(t => ({\n  task: String(t.task).trim(),\n  owner: t.owner || 'أنا',\n  due_date: /^\\d{4}-\\d{2}-\\d{2}$/.test(t.due_date || '') ? t.due_date : '',\n  priority: t.priority || 'normal'\n}));\nconst duration = (msg.voice || msg.audio || {}).duration || 0;\n\nconst lines = [typeIcon + ' <b>' + esc(o.title || 'ملاحظة صوتية') + '</b>', '⏱️ ' + Math.floor(duration / 60) + ':' + String(duration % 60).padStart(2, '0') + ' دقيقة', '', '<b>الخلاصة:</b>'];\n(o.summary || []).forEach(s => lines.push('• ' + esc(s)));\nif ((o.decisions || []).length) { lines.push('', '<b>القرارات:</b>'); o.decisions.forEach(d => lines.push('✔️ ' + esc(d))); }\nif (tasks.length) {\n  lines.push('', '<b>المهام (' + tasks.length + '):</b>');\n  tasks.forEach(t => lines.push((t.priority === 'high' ? '🔴' : '☑️') + ' ' + esc(t.task) + ' — ' + esc(t.owner) + (t.due_date ? ' · 📅 ' + t.due_date : '')));\n  lines.push('', '✅ أُضيفت المهام إلى Google Tasks');\n}\nlines.push('', '<blockquote expandable>' + esc(transcript.slice(0, 2500)) + '</blockquote>');\n\nreturn [{ json: {\n  chatId: msg.chat.id,\n  messageId: msg.message_id,\n  user: msg.from ? (msg.from.username || msg.from.first_name) : '',\n  date: $now.toFormat('yyyy-LL-dd HH:mm'),\n  durationSec: duration,\n  title: o.title || '',\n  type: o.type || 'other',\n  summaryText: (o.summary || []).join(' | '),\n  decisionsText: (o.decisions || []).join(' | '),\n  transcript,\n  tasks,\n  taskCount: tasks.length,\n  telegramText: lines.join('\\n')\n} }];"
+      },
+      "id": "bc0d53f8-94b4-496d-bfc9-1e24d887dd74",
+      "name": "Build Note",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "⚠️ الرسالة أطول من 15 دقيقة. قسّمها إلى رسائل أقصر وسأفرّغها لك.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ec78ed71-364f-4f00-8138-1cb90f4ddb92",
+      "name": "Reply Too Long",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        624
+      ],
+      "webhookId": "7b09fb1a-5011-455e-b64c-3b8fa213f9db",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "🎙️ أرسل لي رسالة صوتية (اجتماع، فكرة، تذكير) وسأرجع لك بالخلاصة والقرارات والمهام، وأضيف المهام إلى Google Tasks.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "9f771f0a-e5e6-4b75-96a1-698ce965e4a2",
+      "name": "Ask for Voice Note",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        800
+      ],
+      "webhookId": "ac7c43d6-9f41-4d41-98db-0601fc8ad29d",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "🎧 استلمت الرسالة الصوتية، جاري التفريغ والتلخيص...",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": true,
+          "reply_to_message_id": "={{ $json.message.message_id }}"
+        }
+      },
+      "id": "840d77c8-41bf-4810-9fb0-170cd9865ebe",
+      "name": "Send Processing Notice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        208
+      ],
+      "webhookId": "d1942e95-a8dd-47aa-8072-e55a1e420925",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.telegramText }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $json.messageId }}"
+        }
+      },
+      "id": "8ba2438d-84ea-4665-93f0-7fc375aaeb10",
+      "name": "Reply with Notes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        224
+      ],
+      "webhookId": "563f429b-1c83-4c36-93a1-e85ed22d1ecd",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Voice Notes"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Notes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "User": "={{ $json.user }}",
+            "Type": "={{ $json.type }}",
+            "Title": "={{ $json.title }}",
+            "Summary": "={{ $json.summaryText }}",
+            "Decisions": "={{ $json.decisionsText }}",
+            "Tasks": "={{ $json.taskCount }}",
+            "Duration (sec)": "={{ $json.durationSec }}",
+            "Transcript": "={{ $json.transcript }}"
+          },
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Decisions",
+              "displayName": "Decisions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tasks",
+              "displayName": "Tasks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration (sec)",
+              "displayName": "Duration (sec)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Transcript",
+              "displayName": "Transcript",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b9380028-7c1f-4945-91f2-832d37a6dd6d",
+      "name": "Save to Notes Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1424,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tasks",
+        "options": {}
+      },
+      "id": "2a9f5b4a-e6d1-4576-8d4b-3be953ba66f4",
+      "name": "Split Tasks",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "task": "@default",
+        "title": "={{ $json.task }}",
+        "additionalFields": {
+          "dueDate": "={{ $json.due_date ? $json.due_date + 'T09:00:00.000Z' : '' }}",
+          "notes": "=المسؤول: {{ $json.owner }} | الأولوية: {{ $json.priority }}\nمن ملاحظة صوتية: {{ $('Build Note').item.json.title }}"
+        }
+      },
+      "id": "dfcdd625-176b-483d-8465-fa9a296adc08",
+      "name": "Create Google Task",
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        592
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 10 - Voice Notes to Tasks\nSend a voice note on Telegram and get back structured notes in seconds.\n\n1. Whisper transcribes the audio (Arabic dialects + English).\n2. AI extracts a title, summary, decisions and action items, turning \"بكرا\" or \"next Thursday\" into real dates.\n3. You get a clean Telegram reply with the transcript in an expandable quote.\n4. The note is saved in Google Sheets and each action item becomes a **Google Task**.\n\n**Limits:** voice or audio files up to 15 minutes. Restrict the trigger to your chat ID in production.",
+        "height": 340,
+        "width": 600,
+        "color": 4
+      },
+      "id": "ba42994c-eca0-434a-9abe-40d232e13473",
+      "name": "Sticky Note 561c41a4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Voice Note": {
+      "main": [
+        [
+          {
+            "node": "Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Processing Notice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Too Long",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for Voice Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Extract Summary and Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Summary and Tasks": {
+      "main": [
+        [
+          {
+            "node": "Build Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Summary and Tasks",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notes Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Summary and Tasks",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Note": {
+      "main": [
+        [
+          {
+            "node": "Reply with Notes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save to Notes Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Tasks": {
+      "main": [
+        [
+          {
+            "node": "Create Google Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "f51b0d27-679b-4219-9f0c-008d19300831",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "ZjMGUWKp10VoGd6p",
+  "tags": []
+}
