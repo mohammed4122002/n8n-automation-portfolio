@@ -1,0 +1,876 @@
+{
+  "name": "14 - AI Lead Scoring and Routing",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "احجز استشارة أتمتة مجانية",
+        "formDescription": "أخبرنا عن مشروعك وسنعود إليك بخطة مناسبة.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "الاسم الكامل",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "البريد الإلكتروني",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "اسم الشركة",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "الموقع الإلكتروني"
+            },
+            {
+              "fieldLabel": "دورك",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "مالك / مؤسس"
+                  },
+                  {
+                    "option": "مدير"
+                  },
+                  {
+                    "option": "موظف"
+                  },
+                  {
+                    "option": "طالب"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "حجم الفريق",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1"
+                  },
+                  {
+                    "option": "2-10"
+                  },
+                  {
+                    "option": "11-50"
+                  },
+                  {
+                    "option": "51-200"
+                  },
+                  {
+                    "option": "200+"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "الميزانية",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "أقل من 500$"
+                  },
+                  {
+                    "option": "500 - 2000$"
+                  },
+                  {
+                    "option": "2000 - 5000$"
+                  },
+                  {
+                    "option": "أكثر من 5000$"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "متى تريد البدء؟",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "هذا الشهر"
+                  },
+                  {
+                    "option": "خلال 1-3 أشهر"
+                  },
+                  {
+                    "option": "أستكشف فقط"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "ما الذي تريد أتمتته؟",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "شكرًا! استلمنا طلبك وستصلك رسالة على بريدك خلال دقائق ✉️"
+            }
+          }
+        }
+      },
+      "id": "f3fe6f8f-2c78-4f19-860d-ede6c51559c4",
+      "name": "Lead Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "19a1aab4-2e63-40d4-a978-21f3182e2186"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "salesChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "bookingUrl",
+              "value": "https://cal.com/your-name/30min",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "caseStudyUrl",
+              "value": "https://github.com/mohammed4122002/n8n-automation-portfolio",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "senderName",
+              "value": "محمد أبو سعدة",
+              "type": "string"
+            },
+            {
+              "id": "c5",
+              "name": "businessName",
+              "value": "Code Build Impact",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f74601ff-84fd-4da8-af4b-605bb36412bf",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json;\nconst email = String(j['البريد الإلكتروني'] || '').trim().toLowerCase();\nlet website = String(j['الموقع الإلكتروني'] || '').trim();\nif (website && !/^https?:\\/\\//i.test(website)) website = 'https://' + website;\nconst domain = email.split('@')[1] || '';\nconst freeMail = /^(gmail|yahoo|hotmail|outlook|icloud|live)\\./i.test(domain);\nif (!website && domain && !freeMail) website = 'https://' + domain;\n\nconst budget = j['الميزانية'] || '', timeline = j['متى تريد البدء؟'] || '', role = j['دورك'] || '', size = j['حجم الفريق'] || '';\nconst budgetPts = { 'أقل من 500$': 3, '500 - 2000$': 10, '2000 - 5000$': 15, 'أكثر من 5000$': 18 }[budget] ?? 0;\nconst timelinePts = { 'هذا الشهر': 12, 'خلال 1-3 أشهر': 7, 'أستكشف فقط': 2 }[timeline] ?? 0;\nconst rolePts = { 'مالك / مؤسس': 10, 'مدير': 7, 'موظف': 3, 'طالب': 0 }[role] ?? 0;\nconst ruleScore = Math.min(40, budgetPts + timelinePts + rolePts) - (freeMail ? 2 : 0);\n\nreturn { json: {\n  leadId: 'LEAD-' + $now.toFormat('yyLLdd-HHmmss'),\n  submittedAt: $now.toFormat('yyyy-LL-dd HH:mm'),\n  name: String(j['الاسم الكامل'] || '').trim(),\n  firstName: String(j['الاسم الكامل'] || '').trim().split(/\\s+/)[0],\n  email, company: String(j['اسم الشركة'] || '').trim(), website, role, size, budget, timeline,\n  need: String(j['ما الذي تريد أتمتته؟'] || '').trim(),\n  freeMail, ruleScore,\n  ruleBreakdown: 'budget ' + budgetPts + ' + timeline ' + timelinePts + ' + role ' + rolePts + (freeMail ? ' - 2 (free email)' : '')\n} };"
+      },
+      "id": "ee4b590d-1366-42e7-81c1-d657424099d7",
+      "name": "Normalize and Rule Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website || 'https://invalid.invalid' }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "html"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "733ae7c6-a1fc-4902-b3a9-ab1dd47aa611",
+      "name": "Fetch Company Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        304
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lead = $('Normalize and Rule Score').item.json;\nconst html = typeof $json.html === 'string' ? $json.html : '';\nconst title = (html.match(/<title[^>]*>([^<]*)<\\/title>/i) || [])[1] || '';\nconst desc = (html.match(/<meta[^>]+name=[\"']description[\"'][^>]+content=[\"']([^\"']*)/i) || [])[1] || '';\nconst text = html\n  .replace(/<script[\\s\\S]*?<\\/script>|<style[\\s\\S]*?<\\/style>|<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/&nbsp;|&amp;|&quot;|&#39;/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim()\n  .slice(0, 3000);\nreturn { json: { ...lead, websiteReachable: text.length > 100, websiteTitle: title.trim(), websiteDescription: desc.trim(), websiteText: text } };"
+      },
+      "id": "7d9f0d85-44eb-4900-989d-83996bd476ee",
+      "name": "Website Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Lead:\n- Name: {{ $json.name }} ({{ $json.role }})\n- Company: {{ $json.company }} | team size: {{ $json.size }}\n- Budget: {{ $json.budget }} | Timeline: {{ $json.timeline }}\n- Wants to automate: {{ $json.need }}\n\nWebsite ({{ $json.websiteReachable ? \"reachable\" : \"not reachable\" }}): {{ $json.websiteTitle }} — {{ $json.websiteDescription }}\n{{ $json.websiteText.slice(0, 2000) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You qualify inbound leads for a freelance automation studio (n8n, AI agents, WhatsApp/Telegram bots, Google Workspace automations).\nfit_score 0-100 = how well the need matches these services and how concrete/valuable it is. High: clear repetitive process, business context, measurable pain. Low: vague, homework, unrelated (e.g. logo design), or spam.\nWrite company_summary, use_case, recommended_service and personalized_opening in Arabic. The opening must reference something specific from the need or website; no flattery, no promises of prices.\nestimated_hours_saved_per_week: conservative integer estimate.\nred_flags: [] if none."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "ff68727c-ec4e-457e-9f91-e6e75893b242",
+      "name": "AI Fit Analysis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1104,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "073185b4-6d48-4fc8-aaf0-606d877bac54",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        528
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"fit_score\": 82,\n  \"industry\": \"عيادات أسنان\",\n  \"company_summary\": \"سطر واحد عن الشركة\",\n  \"use_case\": \"أتمتة حجز المواعيد والتذكير\",\n  \"recommended_service\": \"بوت حجوزات واتساب + تذكير تلقائي\",\n  \"estimated_hours_saved_per_week\": 10,\n  \"personalized_opening\": \"جملتان شخصيتان بالعربية\",\n  \"red_flags\": [\"...\"],\n  \"reasoning\": \"short English reasoning\"\n}"
+      },
+      "id": "e4033f6a-e426-4082-8544-8aa06d7d8a53",
+      "name": "Lead Analysis Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lead = $('Website Snapshot').item.json;\nconst ai = $json.output || {};\nconst cfg = $('Config').first().json;\nconst fit = Math.max(0, Math.min(100, Number(ai.fit_score) || 0));\nconst score = Math.round(lead.ruleScore + fit * 0.6);\nconst tier = score >= 70 ? 'hot' : score >= 45 ? 'warm' : 'cold';\nconst opening = ai.personalized_opening || ('شكرًا لتواصلك يا ' + lead.firstName + '.');\n\nconst sign = '\\n\\nتحياتي،\\n' + cfg.senderName + '\\n' + cfg.businessName;\nconst emails = {\n  hot: {\n    subject: lead.firstName + '، خطوة سريعة لأتمتة ' + (ai.use_case || 'عملك'),\n    body: 'مرحبًا ' + lead.firstName + '،\\n\\n' + opening + '\\n\\nبناءً على ما كتبته، أقترح: ' + (ai.recommended_service || '') + '.\\nأحب أن أريك كيف سيعمل على حالتك في مكالمة قصيرة (30 دقيقة):\\n' + cfg.bookingUrl + sign\n  },\n  warm: {\n    subject: 'فكرة لأتمتة ' + (ai.use_case || 'عملك') + ' في ' + lead.company,\n    body: 'مرحبًا ' + lead.firstName + '،\\n\\n' + opening + '\\n\\nجهزت لك أمثلة لأنظمة مشابهة بنيتها على n8n:\\n' + cfg.caseStudyUrl + '\\n\\nإذا أعجبتك الفكرة، احجز مكالمة متى ما ناسبك: ' + cfg.bookingUrl + sign\n  },\n  cold: {\n    subject: 'شكرًا لتواصلك مع ' + cfg.businessName,\n    body: 'مرحبًا ' + lead.firstName + '،\\n\\nشكرًا لاهتمامك بالأتمتة. هذه مكتبة workflows مجانية يمكنك البدء بها فورًا:\\n' + cfg.caseStudyUrl + '\\n\\nوعندما تصبح جاهزًا لمشروع، يسعدني أن نتحدث.' + sign\n  }\n};\n\nreturn { json: {\n  ...lead,\n  fitScore: fit, score, tier,\n  industry: ai.industry || '', companySummary: ai.company_summary || '', useCase: ai.use_case || '',\n  recommendedService: ai.recommended_service || '', hoursSaved: ai.estimated_hours_saved_per_week || 0,\n  redFlags: (ai.red_flags || []).join(' | '), reasoning: ai.reasoning || '',\n  emailSubject: emails[tier].subject, emailBody: emails[tier].body,\n  salesChatId: cfg.salesChatId\n} };"
+      },
+      "id": "f8aa67c5-720b-43f1-abca-41611e5bc98b",
+      "name": "Score and Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Leads CRM"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead ID": "={{ $json.leadId }}",
+            "Date": "={{ $json.submittedAt }}",
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Company": "={{ $json.company }}",
+            "Website": "={{ $json.website }}",
+            "Role": "={{ $json.role }}",
+            "Budget": "={{ $json.budget }}",
+            "Timeline": "={{ $json.timeline }}",
+            "Need": "={{ $json.need }}",
+            "Rule Score": "={{ $json.ruleScore }}",
+            "AI Fit": "={{ $json.fitScore }}",
+            "Score": "={{ $json.score }}",
+            "Tier": "={{ $json.tier }}",
+            "Recommended Service": "={{ $json.recommendedService }}",
+            "Red Flags": "={{ $json.redFlags }}",
+            "Stage": "new"
+          },
+          "schema": [
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Need",
+              "displayName": "Need",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rule Score",
+              "displayName": "Rule Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Fit",
+              "displayName": "AI Fit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recommended Service",
+              "displayName": "Recommended Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Red Flags",
+              "displayName": "Red Flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stage",
+              "displayName": "Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6213c53b-caac-4c9d-9441-8200308fa95e",
+      "name": "Log to CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tier }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "hot"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tier }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "warm"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Warm"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Cold"
+        }
+      },
+      "id": "b1cba780-2a1a-4cda-8ea9-4af7c8dd80ee",
+      "name": "Route by Tier",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.salesChatId }}",
+        "text": "=🔥 <b>عميل ساخن — {{ $json.score }}/100</b>\n👤 {{ $json.name }} ({{ $json.role }})\n🏢 {{ $json.company }} · {{ $json.industry }} · فريق {{ $json.size }}\n💰 {{ $json.budget }} | ⏱️ {{ $json.timeline }}\n🎯 {{ $json.useCase }}\n🛠️ الخدمة المقترحة: {{ $json.recommendedService }}\n⌛ توفير متوقع: ~{{ $json.hoursSaved }} ساعة/أسبوع\n📧 {{ $json.email }}\n\nتم إرسال رابط حجز المكالمة تلقائيًا ✅",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "b9ffb2e4-107b-4901-a742-bdb9b9133ec4",
+      "name": "Alert Sales (Hot Lead)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        224
+      ],
+      "webhookId": "1e713470-e1ca-4cdf-926c-f37b8daec213",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Score and Route').item.json.email }}",
+        "subject": "={{ $('Score and Route').item.json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $('Score and Route').item.json.emailBody }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.senderName }}"
+        }
+      },
+      "id": "a1328428-c29f-4c30-bbd3-0fc837c5e815",
+      "name": "Email: Book a Call",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        224
+      ],
+      "webhookId": "a7b2b609-5547-4e23-8b0b-20a09a9e82e8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.senderName }}"
+        }
+      },
+      "id": "684f5191-3292-494d-b278-d873a7b6ff51",
+      "name": "Email: Case Studies",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1824,
+        400
+      ],
+      "webhookId": "4b2bd131-fc0d-492d-81df-5b19237dacac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.senderName }}"
+        }
+      },
+      "id": "98266510-7069-40d5-bf55-56f7f53b7fe2",
+      "name": "Email: Free Resources",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1824,
+        592
+      ],
+      "webhookId": "06160e63-bc65-45b3-8847-291999b289e5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 14 - AI Lead Scoring and Routing\nEvery inbound lead is qualified in under a minute.\n\n1. Arabic lead form → data normalized; a **rule score (0-40)** from budget, timeline and role.\n2. The company website is fetched and summarized as context (domain is guessed from business email).\n3. AI gives a **fit score (0-100)**, industry, use case, recommended service and a personal opening line.\n4. Final score = rules + 60% of AI fit → **Hot ≥ 70, Warm ≥ 45, Cold** below.\n5. Hot: instant Telegram alert + booking-link email. Warm: case-study email. Cold: free resources. All leads land in the CRM sheet.",
+        "height": 380,
+        "width": 620,
+        "color": 4
+      },
+      "id": "10ef54aa-1518-418c-81bf-bed9a0983920",
+      "name": "Sticky Note f622c991",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize and Rule Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and Rule Score": {
+      "main": [
+        [
+          {
+            "node": "Fetch Company Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Company Website": {
+      "main": [
+        [
+          {
+            "node": "Website Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Website Snapshot": {
+      "main": [
+        [
+          {
+            "node": "AI Fit Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Fit Analysis": {
+      "main": [
+        [
+          {
+            "node": "Score and Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Fit Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Analysis Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Fit Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score and Route": {
+      "main": [
+        [
+          {
+            "node": "Log to CRM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route by Tier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Tier": {
+      "main": [
+        [
+          {
+            "node": "Alert Sales (Hot Lead)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email: Case Studies",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email: Free Resources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Sales (Hot Lead)": {
+      "main": [
+        [
+          {
+            "node": "Email: Book a Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "652c9785-b2dc-4129-b4af-9784251d7680",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "YylopPaRhc1lJbEH",
+  "tags": []
+}

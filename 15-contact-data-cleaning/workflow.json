@@ -1,0 +1,705 @@
+{
+  "name": "15 - Contact Data Cleaning: Code vs No-code",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "ea5ca7ec-85fa-47fd-a3c7-f878b526d050",
+      "name": "Manual Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "defaultCountryCode",
+              "value": "970",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "telegramChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4d1ad8af-20e6-43f2-8616-dcd70cfaf3e4",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "id": "095bd580-761c-4b95-983a-c2d1dffd7615",
+      "name": "Every Night 02:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Contacts Cleanup"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Raw"
+        },
+        "options": {}
+      },
+      "id": "dfa18ef1-6a12-4af6-86b8-bebedda52515",
+      "name": "Read Raw Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        448
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "name",
+              "value": "={{ String($json.Name ?? '').trim().replace(/\\s+/g, ' ') }}",
+              "type": "string"
+            },
+            {
+              "id": "n2",
+              "name": "email",
+              "value": "={{ String($json.Email ?? '').trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "n3",
+              "name": "phone",
+              "value": "={{ String($json.Phone ?? '').replace(/\\D/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "n4",
+              "name": "city",
+              "value": "={{ String($json.City ?? '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "69bd8740-d7fc-42f1-acd6-5093c7047b0c",
+      "name": "Normalize (No-code)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.email }}",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              },
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[a-z]{2,}$"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "221898ac-ac3c-4fd3-961b-285ceeafa6d4",
+      "name": "Valid Email (No-code)",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "email",
+        "options": {}
+      },
+      "id": "622aeb79-b2e1-4d1c-8018-ddfad8b08114",
+      "name": "Remove Duplicates (No-code)",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "empty"
+      },
+      "id": "402c6c27-e1d3-42cf-9af8-2bc0a24a7f14",
+      "name": "Wait for Both Lanes",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cc = String($('Config').first().json.defaultCountryCode || '970');\nconst toLatin = s => String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));\nconst pick = (row, names) => { for (const k of Object.keys(row)) if (names.includes(k.trim().toLowerCase())) return row[k]; return ''; };\nconst domainFix = { 'gmial.com': 'gmail.com', 'gmai.com': 'gmail.com', 'gmail.co': 'gmail.com', 'gamil.com': 'gmail.com', 'hotmial.com': 'hotmail.com', 'hotmail.co': 'hotmail.com', 'yahho.com': 'yahoo.com', 'outlok.com': 'outlook.com' };\nconst titleCase = s => s.replace(/\\b([a-z])([a-z]*)/gi, (m, a, b) => a.toUpperCase() + b.toLowerCase());\n\nconst rows = $input.all().map((item, i) => {\n  const r = item.json, fixes = [];\n  let name = toLatin(pick(r, ['name', 'full name', 'الاسم', 'الاسم الكامل'])).trim().replace(/\\s+/g, ' ');\n  if (/[a-z]/i.test(name) && name !== titleCase(name)) { name = titleCase(name); fixes.push('name case'); }\n\n  let email = toLatin(pick(r, ['email', 'e-mail', 'البريد', 'البريد الإلكتروني'])).trim().toLowerCase().replace(/\\s+/g, '');\n  let [user, domain] = email.split('@');\n  if (domain) {\n    if (domain.endsWith('.con')) { domain = domain.slice(0, -4) + '.com'; fixes.push('.con→.com'); }\n    if (domainFix[domain]) { fixes.push(domain + '→' + domainFix[domain]); domain = domainFix[domain]; }\n    email = user + '@' + domain;\n  }\n  const emailValid = /^[^\\s@]+@[^\\s@]+\\.[a-z]{2,}$/.test(email);\n\n  let digits = toLatin(pick(r, ['phone', 'mobile', 'whatsapp', 'الهاتف', 'الجوال', 'رقم الهاتف'])).replace(/\\D/g, '');\n  if (digits.startsWith('00')) digits = digits.slice(2);\n  if (digits.length === 10 && digits.startsWith('0')) { digits = cc + digits.slice(1); fixes.push('phone +' + cc); }\n  else if (digits.length === 9 && /^5/.test(digits)) { digits = cc + digits; fixes.push('phone +' + cc); }\n  const phoneValid = digits.length >= 11 && digits.length <= 15;\n  const phone = phoneValid ? '+' + digits : '';\n\n  const reasons = [];\n  if (!name) reasons.push('الاسم فارغ');\n  if (!emailValid && !phoneValid) reasons.push('لا يوجد بريد أو هاتف صالح');\n  return {\n    row: i + 2, name, email: emailValid ? email : '', phone,\n    city: String(pick(r, ['city', 'المدينة']) || '').trim(),\n    source: String(pick(r, ['source', 'المصدر']) || '').trim(),\n    notes: String(pick(r, ['notes', 'ملاحظات']) || '').trim(),\n    fixes, reasons, invalidEmail: email && !emailValid ? email : ''\n  };\n});\n\nconst valid = rows.filter(r => r.reasons.length === 0);\nconst rejected = rows.filter(r => r.reasons.length > 0);\n\nconst parent = valid.map((_, i) => i);\nconst find = i => parent[i] === i ? i : (parent[i] = find(parent[i]));\nconst seen = {};\nvalid.forEach((r, i) => {\n  for (const key of [r.email && 'e:' + r.email, r.phone && 'p:' + r.phone].filter(Boolean)) {\n    if (seen[key] === undefined) seen[key] = i; else parent[find(i)] = find(seen[key]);\n  }\n});\nconst groups = {};\nvalid.forEach((r, i) => { (groups[find(i)] = groups[find(i)] || []).push(r); });\n\nconst best = (list, f) => list.map(x => x[f]).filter(Boolean).sort((a, b) => b.length - a.length)[0] || '';\nconst uniq = (list, f) => [...new Set(list.map(x => x[f]).filter(Boolean))].join(' | ');\nconst clean = Object.values(groups).map((g, n) => ({\n  status: 'clean',\n  contactId: 'C-' + String(n + 1).padStart(4, '0'),\n  contactKey: best(g, 'email') || best(g, 'phone'),\n  name: best(g, 'name'), email: best(g, 'email'), phone: best(g, 'phone'), city: best(g, 'city'),\n  source: uniq(g, 'source'), notes: uniq(g, 'notes'),\n  mergedRows: g.map(x => x.row).join(','), mergedCount: g.length,\n  fixes: [...new Set(g.flatMap(x => x.fixes))].join(', ')\n}));\n\nreturn [\n  ...clean.map(json => ({ json })),\n  ...rejected.map(r => ({ json: { status: 'rejected', row: r.row, name: r.name, email: r.invalidEmail || r.email, phone: r.phone, reason: r.reasons.join(' + ') } }))\n];"
+      },
+      "id": "9998e089-afb0-47a2-8cb4-71034b420b5b",
+      "name": "Clean, Validate and Merge (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "clean"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4f530c9d-2a76-41b2-8caf-44643e88e1cb",
+      "name": "Clean Row?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Contacts Cleanup"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Clean"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Contact Key"
+          ],
+          "value": {
+            "Contact Key": "={{ $json.contactKey }}",
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "City": "={{ $json.city }}",
+            "Source": "={{ $json.source }}",
+            "Notes": "={{ $json.notes }}",
+            "Merged Rows": "={{ $json.mergedRows }}",
+            "Fixes Applied": "={{ $json.fixes }}",
+            "Cleaned At": "={{ $now.toFormat(\"yyyy-LL-dd HH:mm\") }}"
+          },
+          "schema": [
+            {
+              "id": "Contact Key",
+              "displayName": "Contact Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Merged Rows",
+              "displayName": "Merged Rows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Fixes Applied",
+              "displayName": "Fixes Applied",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cleaned At",
+              "displayName": "Cleaned At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "f4d1f756-d17c-4512-bbc3-b98efc78e31c",
+      "name": "Upsert Clean Contacts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        496
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Contacts Cleanup"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Rejected"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Raw Row": "={{ $json.row }}",
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "Reason": "={{ $json.reason }}",
+            "Date": "={{ $now.toFormat(\"yyyy-LL-dd HH:mm\") }}"
+          },
+          "schema": [
+            {
+              "id": "Raw Row",
+              "displayName": "Raw Row",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f72cc522-be8a-4740-9122-e1525a934aa8",
+      "name": "Log Rejected Rows",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        688
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Read Raw Contacts').all().length;\nconst noCode = $('Remove Duplicates (No-code)').all().length;\nconst noCodeDropped = raw - $('Valid Email (No-code)').all().length;\nconst out = $('Clean, Validate and Merge (Code)').all().map(i => i.json);\nconst clean = out.filter(r => r.status === 'clean');\nconst rejected = out.filter(r => r.status === 'rejected');\nconst merged = clean.reduce((s, r) => s + (r.mergedCount - 1), 0);\nconst fixed = clean.filter(r => r.fixes).length;\nconst withPhone = clean.filter(r => r.phone).length;\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst text = [\n  '🧹 <b>تقرير تنظيف بيانات العملاء</b> — ' + $now.toFormat('yyyy-LL-dd HH:mm'),\n  '',\n  '📥 صفوف خام: <b>' + raw + '</b>',\n  '',\n  '<b>⚙️ مسار No-code</b> (Set + Filter + Remove Duplicates)',\n  '• جهات اتصال نهائية: ' + noCode,\n  '• حُذف بسبب بريد غير صالح: ' + noCodeDropped + ' (حتى لو كان الهاتف صالحًا)',\n  '',\n  '<b>💻 مسار Code</b> (Code node واحد)',\n  '• جهات اتصال نظيفة: ' + clean.length,\n  '• تكرارات دُمجت (بالبريد أو الهاتف): ' + merged,\n  '• صفوف صُحّحت تلقائيًا: ' + fixed + ' (أخطاء نطاق، .con، أرقام عربية، مفتاح الدولة)',\n  '• أرقام بصيغة دولية: ' + withPhone,\n  '• مرفوض مع السبب: ' + rejected.length,\n  '',\n  '💡 <b>القاعدة:</b> No-code ممتاز للتنظيف البسيط والقواعد الواضحة. Code أفضل عندما تحتاج تصحيحًا ذكيًا ودمجًا متعدد المفاتيح وتقريرًا بالأسباب.'\n];\nif (rejected.length) text.push('', '<b>أمثلة مرفوضة:</b>', ...rejected.slice(0, 3).map(r => '• صف ' + r.row + ': ' + esc(r.reason)));\nreturn [{ json: { text: text.join('\\n'), raw, noCode, clean: clean.length, merged, fixed, rejected: rejected.length, chatId: $('Config').first().json.telegramChatId } }];"
+      },
+      "id": "8bcffb3c-c6f9-46a6-b38b-861b2070a6a2",
+      "name": "Compare Code vs No-code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "962cdcef-985c-4a8a-9508-536212ac735e",
+      "name": "Send Cleanup Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1792,
+        256
+      ],
+      "webhookId": "54ba62e9-5d9a-48fd-8c86-a84b3ef911b3",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 15 - Contact Data Cleaning: Code vs No-code\nThe same messy contact list cleaned two ways, side by side.\n\n**Top lane (No-code):** Edit Fields expressions → Filter valid emails → Remove Duplicates by email.\n\n**Bottom lane (Code):** one Code node that converts Arabic digits, fixes email typos (gmial, .con), formats phones to +970..., title-cases names, merges duplicates by email **or** phone (union-find), keeps the most complete values and explains every rejected row.\n\nClean contacts are upserted to `Clean`, rejected rows go to `Rejected`, and a Telegram report compares both lanes.",
+        "height": 380,
+        "width": 620,
+        "color": 4
+      },
+      "id": "c1155f01-88ea-4fb3-9f9f-7edf4932f3f2",
+      "name": "Sticky Note 3bab5723",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Run": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read Raw Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Night 02:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Raw Contacts": {
+      "main": [
+        [
+          {
+            "node": "Normalize (No-code)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clean, Validate and Merge (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize (No-code)": {
+      "main": [
+        [
+          {
+            "node": "Valid Email (No-code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Email (No-code)": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates (No-code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates (No-code)": {
+      "main": [
+        [
+          {
+            "node": "Wait for Both Lanes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Both Lanes": {
+      "main": [
+        [
+          {
+            "node": "Compare Code vs No-code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean, Validate and Merge (Code)": {
+      "main": [
+        [
+          {
+            "node": "Wait for Both Lanes",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Clean Row?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Row?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Clean Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Rejected Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Code vs No-code": {
+      "main": [
+        [
+          {
+            "node": "Send Cleanup Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "57088fd0-566d-4669-9941-5a489399f9ec",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [
+    {
+      "id": "0b0dd569-0400-40e0-98a1-ff25d66a1160",
+      "name": "No-code lane",
+      "nodeIds": [
+        "69bd8740-d7fc-42f1-acd6-5093c7047b0c",
+        "221898ac-ac3c-4fd3-961b-285ceeafa6d4",
+        "622aeb79-b2e1-4d1c-8018-ddfad8b08114"
+      ],
+      "description": "Expressions + Filter + Remove Duplicates, zero code"
+    }
+  ],
+  "id": "1qmCdnN7c4uDGHep",
+  "tags": []
+}

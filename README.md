@@ -6,12 +6,12 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-عشرة workflows جاهزة لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، وتحويل الصوت إلى مهام — مع شرح وصور وطريقة استخدام لكل مشروع.
+خمسة عشر workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، توليد أفكار المحتوى، استخراج الفواتير، بناء قاعدة معرفة داخلية، تقييم العملاء، وتنظيف البيانات — مع شرح وصور وطريقة استخدام لكل مشروع.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-10-24B89A?style=for-the-badge" alt="Ten projects">
+  <img src="https://img.shields.io/badge/Projects-15-24B89A?style=for-the-badge" alt="Fifteen projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -36,6 +36,11 @@
 | **08** | **فرز تذاكر دعم العملاء** | يجمع رسائل الموقع وTelegram في تذاكر مصنفة وموجهة للفريق المناسب. | [شرح المشروع والصور ←](./08-ai-support-ticket-triage/README.md) |
 | **09** | **بوت ترجمة مع مراجعة جودة** | يترجم عبر Telegram باستخدام قاموس مصطلحات مخصص، ثم يراجع الترجمة قبل إرسالها. | [شرح المشروع والصور ←](./09-arabic-english-translator/README.md) |
 | **10** | **ملاحظات صوتية إلى مهام** | يفرغ الرسائل الصوتية، يستخرج الملخص والمهام، ويضيفها إلى Google Tasks. | [شرح المشروع والصور ←](./10-voice-notes-to-tasks/README.md) |
+| **11** | **محرك أفكار المحتوى الأسبوعي** | يولّد كل أحد سبع أفكار منشورات جديدة ويرسل الخطة على Telegram. | [شرح المشروع والصور ←](./11-weekly-content-ideas-engine/README.md) |
+| **12** | **استخراج الفواتير والتحقق منها** | يستخرج بيانات الفواتير من الصور، يتحقق منها، ويسجلها في Google Sheets. | [شرح المشروع والصور ←](./12-invoice-extraction-and-validation/README.md) |
+| **13** | **مساعد المعرفة الداخلي (RAG)** | يجيب على أسئلة الفريق من مستندات الشركة فقط مع ذكر المصدر. | [شرح المشروع والصور ←](./13-rag-knowledge-agent/README.md) |
+| **14** | **تقييم العملاء المحتملين وتوزيعهم** | يصنّف العملاء ساخنًا أو دافئًا أو باردًا ويرسل لكل فئة ردًا مناسبًا تلقائيًا. | [شرح المشروع والصور ←](./14-ai-lead-scoring-and-routing/README.md) |
+| **15** | **تنظيف بيانات جهات الاتصال** | يقارن مسارَي تنظيف (كود وبدون كود) ويرسل تقرير النتائج على Telegram. | [شرح المشروع والصور ←](./15-contact-data-cleaning/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -69,6 +74,18 @@
   <tr>
     <td align="center"><strong>10 · الملاحظات الصوتية إلى مهام</strong><br><a href="./10-voice-notes-to-tasks/README.md"><img src="./10-voice-notes-to-tasks/screenshots/workflow-overview.png" alt="مخطط تحويل الملاحظات الصوتية إلى مهام في n8n" width="420"></a></td>
     <td align="center"><strong>المهام في Google Tasks</strong><br><a href="./10-voice-notes-to-tasks/README.md"><img src="./10-voice-notes-to-tasks/screenshots/tasks-example.png" alt="مثال المهام المنشأة في Google Tasks" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>11 · محرك أفكار المحتوى</strong><br><a href="./11-weekly-content-ideas-engine/README.md"><img src="./11-weekly-content-ideas-engine/screenshots/workflow-overview.png" alt="مخطط محرك أفكار المحتوى الأسبوعي في n8n" width="420"></a></td>
+    <td align="center"><strong>12 · استخراج الفواتير</strong><br><a href="./12-invoice-extraction-and-validation/README.md"><img src="./12-invoice-extraction-and-validation/screenshots/workflow-overview.png" alt="مخطط استخراج الفواتير والتحقق منها في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>13 · مساعد المعرفة (RAG)</strong><br><a href="./13-rag-knowledge-agent/README.md"><img src="./13-rag-knowledge-agent/screenshots/workflow-overview.png" alt="مخطط مساعد المعرفة الداخلي في n8n" width="420"></a></td>
+    <td align="center"><strong>14 · تقييم العملاء وتوزيعهم</strong><br><a href="./14-ai-lead-scoring-and-routing/README.md"><img src="./14-ai-lead-scoring-and-routing/screenshots/workflow-overview.png" alt="مخطط تقييم العملاء المحتملين وتوزيعهم في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>15 · تنظيف بيانات جهات الاتصال</strong><br><a href="./15-contact-data-cleaning/README.md"><img src="./15-contact-data-cleaning/screenshots/workflow-overview.png" alt="مخطط تنظيف بيانات جهات الاتصال في n8n" width="420"></a></td>
+    <td align="center"></td>
   </tr>
 </table>
 
@@ -107,7 +124,12 @@
 ├── 07-content-calendar-auto-publisher/
 ├── 08-ai-support-ticket-triage/
 ├── 09-arabic-english-translator/
-└── 10-voice-notes-to-tasks/
+├── 10-voice-notes-to-tasks/
+├── 11-weekly-content-ideas-engine/
+├── 12-invoice-extraction-and-validation/
+├── 13-rag-knowledge-agent/
+├── 14-ai-lead-scoring-and-routing/
+└── 15-contact-data-cleaning/
 ```
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.

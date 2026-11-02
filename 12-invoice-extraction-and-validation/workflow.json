@@ -1,0 +1,891 @@
+{
+  "name": "12 - Invoice Extraction and Validation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 10,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment filename:pdf (invoice OR فاتورة OR receipt OR إيصال)",
+          "readStatus": "unread"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "id": "adc3fc1a-93c6-417a-920d-f1d54a21e08f",
+      "name": "Invoice Emails",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        384
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "25JCY05LEwgG9AGW",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "telegramChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "autoApproveLimit",
+              "value": 5000,
+              "type": "number"
+            },
+            {
+              "id": "c3",
+              "name": "defaultCurrency",
+              "value": "ILS",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "d6d7738c-2fd4-4fb1-b6dd-6c1ffb9041ff",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "رفع فاتورة",
+        "formDescription": "ارفع فاتورة أو إيصال PDF وسيتم استخراج بياناته وتسجيله تلقائيًا.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Invoice PDF",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "تم استلام الفاتورة ✅ ستصلك النتيجة على Telegram."
+            }
+          }
+        }
+      },
+      "id": "7f63da4c-47fa-45e2-bc7a-dc0d45b31d39",
+      "name": "Upload Invoice Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        576
+      ],
+      "webhookId": "f49b239b-2ea5-4fe0-8855-42cad6df0dfb"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BUmJ9bLp_OpIgEoFaavTEnHP4VSHcwEAxvIMEilZ0Rw",
+          "mode": "list",
+          "cachedResultName": "Invoices Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BUmJ9bLp_OpIgEoFaavTEnHP4VSHcwEAxvIMEilZ0Rw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 8063777,
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BUmJ9bLp_OpIgEoFaavTEnHP4VSHcwEAxvIMEilZ0Rw/edit#gid=8063777"
+        },
+        "options": {}
+      },
+      "id": "2b7df736-3590-4df6-b68d-6b33db7cdb37",
+      "name": "Read Existing Invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        480
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\n$('Config').all().forEach((item, idx) => {\n  const bin = item.binary || {};\n  const j = item.json;\n  for (const key of Object.keys(bin)) {\n    const b = bin[key];\n    const name = b.fileName || key;\n    const isPdf = String(b.mimeType || '').includes('pdf') || /\\.pdf$/i.test(name);\n    if (!isPdf) continue;\n    out.push({\n      json: {\n        source: j.submittedAt ? 'form' : 'email',\n        from: (j.from && (j.from.text || (j.from.value && j.from.value[0] && j.from.value[0].address))) || 'Form upload',\n        subject: j.subject || '',\n        emailId: j.id || '',\n        fileName: name,\n        receivedAt: $now.toFormat('yyyy-LL-dd HH:mm')\n      },\n      binary: { data: b },\n      pairedItem: { item: idx }\n    });\n  }\n});\nreturn out;"
+      },
+      "id": "cd8c58dd-9b13-4bad-992b-f77d04b0ba81",
+      "name": "Split PDF Attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true,
+          "keepSource": "json",
+          "maxPages": 5
+        }
+      },
+      "id": "a0656fa8-e8dd-4ff7-9c4f-598cb8a418c1",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        480
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.text || '').trim().length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 40
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d987d719-497c-4f7b-82ff-c79dfa8816c0",
+      "name": "Has Readable Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Default currency if not printed: {{ $(\"Config\").first().json.defaultCurrency }}\n\nDocument text:\n\"\"\"{{ String($json.text).slice(0, 12000) }}\"\"\"",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You extract accounting data from invoices and receipts (Arabic or English). Return numbers as plain numbers (no thousands separators, no currency symbols). Dates as YYYY-MM-DD. currency as ISO 4217 code. document_type: invoice | receipt | credit_note | not_invoice. If a field is not present use null (or [] for line_items). Never guess or compute values that are not printed, except converting formats. confidence: 0-1 for the overall extraction."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "32727aa8-2ec6-4541-aa72-3f70ece7dfcb",
+      "name": "Extract Invoice Data",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "6a430c92-deaa-49ee-908b-85e25b18484e",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1352,
+        408
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"document_type\": \"invoice\",\n  \"vendor_name\": \"Cloud Hosting LLC\",\n  \"vendor_tax_id\": \"562198341\",\n  \"invoice_number\": \"INV-2041\",\n  \"invoice_date\": \"2026-10-20\",\n  \"due_date\": \"2026-11-19\",\n  \"currency\": \"USD\",\n  \"subtotal\": 1000,\n  \"tax_rate\": 18,\n  \"tax_amount\": 180,\n  \"total\": 1180,\n  \"line_items\": [ { \"description\": \"VPS Pro plan\", \"quantity\": 1, \"unit_price\": 1000, \"amount\": 1000 } ],\n  \"confidence\": 0.95\n}"
+      },
+      "id": "2ae950de-2f24-4070-9e04-3f278d4d3993",
+      "name": "Invoice Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1480,
+        408
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const v = $json.output || {};\nconst meta = $('Split PDF Attachments').item.json;\nconst cfg = $('Config').first().json;\nconst num = x => { if (typeof x === 'number') return x; const n = parseFloat(String(x ?? '').replace(/[^\\d.-]/g, '')); return isNaN(n) ? null : n; };\nconst round = n => Math.round(n * 100) / 100;\nconst issues = [];\n\nconst subtotal = num(v.subtotal), tax = num(v.tax_amount) ?? 0, total = num(v.total);\nconst lines = Array.isArray(v.line_items) ? v.line_items : [];\nconst linesSum = round(lines.reduce((s, l) => s + (num(l.amount) ?? (num(l.quantity) ?? 1) * (num(l.unit_price) ?? 0)), 0));\nconst tol = x => Math.max(1, Math.abs(x) * 0.01);\n\nif (!v.vendor_name) issues.push('اسم المورد غير موجود');\nif (!v.invoice_number) issues.push('رقم الفاتورة غير موجود');\nif (total === null) issues.push('الإجمالي غير موجود');\nif (subtotal !== null && total !== null && Math.abs(subtotal + tax - total) > tol(total)) issues.push('المجموع الفرعي + الضريبة لا يساوي الإجمالي (' + round(subtotal + tax) + ' ≠ ' + total + ')');\nif (lines.length && subtotal !== null && Math.abs(linesSum - subtotal) > tol(subtotal)) issues.push('مجموع البنود (' + linesSum + ') لا يطابق المجموع الفرعي (' + subtotal + ')');\nconst d = DateTime.fromISO(String(v.invoice_date || ''));\nif (!d.isValid) issues.push('تاريخ الفاتورة غير صالح');\nelse if (d > $now.plus({ days: 7 })) issues.push('تاريخ الفاتورة في المستقبل');\nelse if (d < $now.minus({ years: 2 })) issues.push('الفاتورة أقدم من سنتين');\nif (total !== null && total > Number(cfg.autoApproveLimit)) issues.push('المبلغ أعلى من حد الاعتماد التلقائي (' + cfg.autoApproveLimit + ')');\nif ((num(v.confidence) ?? 0) < 0.7) issues.push('ثقة الاستخراج منخفضة');\n\nconst norm = s => String(s || '').toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu, '');\nconst invoiceKey = norm(v.vendor_name) + '|' + norm(v.invoice_number);\nconst existing = new Set($('Read Existing Invoices').all().map(i => i.json['Invoice Key']).filter(Boolean));\nconst duplicate = Boolean(v.invoice_number) && existing.has(invoiceKey);\n\nconst docType = String(v.document_type || 'invoice');\nlet status = 'approved';\nif (docType === 'not_invoice') status = 'not_invoice';\nelse if (duplicate) status = 'duplicate';\nelse if (issues.length) status = 'review';\n\nconst safe = s => String(s || 'unknown').replace(/[^\\p{L}\\p{N}-]+/gu, '_').slice(0, 40);\nreturn {\n  json: {\n    ...meta,\n    invoiceKey, status, issues, issuesText: issues.join(' | '),\n    vendor: v.vendor_name || '', taxId: v.vendor_tax_id || '', invoiceNumber: v.invoice_number || '',\n    invoiceDate: v.invoice_date || '', dueDate: v.due_date || '', currency: v.currency || cfg.defaultCurrency,\n    subtotal, tax, taxRate: num(v.tax_rate), total, linesCount: lines.length,\n    itemsText: lines.map(l => l.description + ' × ' + (l.quantity ?? 1) + ' = ' + (l.amount ?? '')).join(' ; '),\n    confidence: num(v.confidence), docType,\n    archiveName: (v.invoice_date || $now.toFormat('yyyy-LL-dd')) + '_' + safe(v.vendor_name) + '_' + safe(v.invoice_number) + '.pdf'\n  },\n  binary: $('Split PDF Attachments').item.binary\n};"
+      },
+      "id": "e1e053ab-4ba1-4e9a-b26c-710e2da3c99a",
+      "name": "Validate Invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.telegramChatId }}",
+        "text": "=📷 <b>ملف PDF ممسوح ضوئيًا (بدون نص)</b>\n📎 {{ $('Split PDF Attachments').item.json.fileName }}\nمن: {{ $('Split PDF Attachments').item.json.from }}\nيحتاج OCR أو إدخالًا يدويًا.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "84cb0bc5-be1c-4e6c-994b-7f30e623e544",
+      "name": "Notify Scanned PDF",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        576
+      ],
+      "webhookId": "2f1e0858-956e-45a3-b1af-ca8d30f7e7c9",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "duplicate"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Duplicate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "not_invoice"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not an invoice"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Approved / Review"
+        }
+      },
+      "id": "9b29bb1d-934d-4add-afa9-d1fb3b482d95",
+      "name": "Route by Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1968,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.telegramChatId }}",
+        "text": "=♻️ <b>فاتورة مكررة تم تجاهلها</b>\n{{ $json.vendor }} — {{ $json.invoiceNumber }}\n💰 {{ $json.total }} {{ $json.currency }}\n📎 {{ $json.fileName }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "1bd50223-2068-4cd1-8245-860834e5c8b8",
+      "name": "Notify Duplicate",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2224,
+        144
+      ],
+      "webhookId": "192e30ca-0b70-4689-bbc3-1dc88fd2bcf1",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "cb1a1bd8-a663-4914-83fb-c569e45f12f1",
+      "name": "Skip Non-Invoice",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.archiveName }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Invoices"
+        },
+        "options": {}
+      },
+      "id": "d6be47c5-6d76-4ead-888e-17b3dc027abd",
+      "name": "Archive PDF in Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2224,
+        528
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "S9A1cPnWqpyPyHCb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BUmJ9bLp_OpIgEoFaavTEnHP4VSHcwEAxvIMEilZ0Rw",
+          "mode": "list",
+          "cachedResultName": "Invoices Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BUmJ9bLp_OpIgEoFaavTEnHP4VSHcwEAxvIMEilZ0Rw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Invoices"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice Key": "={{ $('Validate Invoice').item.json.invoiceKey }}",
+            "Received": "={{ $('Validate Invoice').item.json.receivedAt }}",
+            "Vendor": "={{ $('Validate Invoice').item.json.vendor }}",
+            "Tax ID": "={{ $('Validate Invoice').item.json.taxId }}",
+            "Invoice No": "={{ $('Validate Invoice').item.json.invoiceNumber }}",
+            "Invoice Date": "={{ $('Validate Invoice').item.json.invoiceDate }}",
+            "Due Date": "={{ $('Validate Invoice').item.json.dueDate }}",
+            "Currency": "={{ $('Validate Invoice').item.json.currency }}",
+            "Subtotal": "={{ $('Validate Invoice').item.json.subtotal }}",
+            "Tax": "={{ $('Validate Invoice').item.json.tax }}",
+            "Total": "={{ $('Validate Invoice').item.json.total }}",
+            "Items": "={{ $('Validate Invoice').item.json.itemsText }}",
+            "Source": "={{ $('Validate Invoice').item.json.source }}: {{ $('Validate Invoice').item.json.from }}",
+            "Drive Link": "={{ 'https://drive.google.com/file/d/' + $json.id + '/view' }}",
+            "Status": "={{ $('Validate Invoice').item.json.status }}",
+            "Issues": "={{ $('Validate Invoice').item.json.issuesText }}"
+          },
+          "schema": [
+            {
+              "id": "Invoice Key",
+              "displayName": "Invoice Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Received",
+              "displayName": "Received",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax ID",
+              "displayName": "Tax ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice No",
+              "displayName": "Invoice No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Items",
+              "displayName": "Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Drive Link",
+              "displayName": "Drive Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Issues",
+              "displayName": "Issues",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "366f0990-8be9-4568-a15e-a64dcc1fb8c3",
+      "name": "Add to Invoices Register",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2448,
+        528
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config').first().json.telegramChatId }}",
+        "text": "={{ $('Validate Invoice').item.json.status === 'approved' ? '✅ <b>فاتورة مسجلة</b>' : '🧐 <b>فاتورة تحتاج مراجعة</b>' }}\n🏢 {{ $('Validate Invoice').item.json.vendor }} — {{ $('Validate Invoice').item.json.invoiceNumber }}\n📅 {{ $('Validate Invoice').item.json.invoiceDate }} | 💰 {{ $('Validate Invoice').item.json.total }} {{ $('Validate Invoice').item.json.currency }}{{ $('Validate Invoice').item.json.issuesText ? '\\n⚠️ ' + $('Validate Invoice').item.json.issuesText : '' }}\n📎 <a href=\"https://drive.google.com/file/d/{{ $('Archive PDF in Drive').item.json.id }}/view\">فتح الملف</a>",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "bda7dff3-dca2-493f-b560-bae0ccc90cb9",
+      "name": "Notify Accountant",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2672,
+        528
+      ],
+      "webhookId": "0094b6b5-99ea-4433-8b0e-68da7e6a93e3",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 12 - Invoice Extraction and Validation\nFrom a PDF in your inbox to a verified row in your register, without typing.\n\n1. Invoices arrive by **Gmail** (PDF attachments) or the **upload form**.\n2. Text is extracted, then AI pulls vendor, number, dates, currency, subtotal, tax, total and line items.\n3. **Code validation**: totals must add up, line items must match, dates must be sane, high amounts need approval, and vendor+number duplicates are blocked.\n4. Valid PDFs are archived in Drive with a clean name and logged in Sheets as `approved` or `review`; you get a Telegram summary.\n5. Scanned PDFs without text are flagged for OCR.",
+        "height": 380,
+        "width": 640,
+        "color": 4
+      },
+      "id": "e878a5f8-a29e-445e-b260-c11743dfbb68",
+      "name": "Sticky Note 6ecb83a2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Invoice Emails": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read Existing Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Invoice Form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing Invoices": {
+      "main": [
+        [
+          {
+            "node": "Split PDF Attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split PDF Attachments": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Has Readable Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Readable Text?": {
+      "main": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Scanned PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Invoice Data",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Invoice": {
+      "main": [
+        [
+          {
+            "node": "Route by Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Status": {
+      "main": [
+        [
+          {
+            "node": "Notify Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Non-Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Archive PDF in Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive PDF in Drive": {
+      "main": [
+        [
+          {
+            "node": "Add to Invoices Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Invoices Register": {
+      "main": [
+        [
+          {
+            "node": "Notify Accountant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "e2911afb-da62-443f-9c3b-fc0a273e6c3f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [
+    {
+      "id": "0565681a-e323-4280-a13b-305f84f2d5a9",
+      "name": "Validate and deduplicate",
+      "nodeIds": [
+        "e1e053ab-4ba1-4e9a-b26c-710e2da3c99a",
+        "9b29bb1d-934d-4add-afa9-d1fb3b482d95"
+      ],
+      "description": "Math checks, date checks, approval limit and duplicate blocking"
+    }
+  ],
+  "id": "wLJeVyXbXHNmdhmm",
+  "tags": []
+}

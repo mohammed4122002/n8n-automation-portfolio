@@ -1,0 +1,691 @@
+{
+  "name": "11 - Weekly Content Ideas Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "6edadd9a-8db6-493c-be47-045f7d90a6ac",
+      "name": "Every Sunday 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "niche",
+              "value": "n8n والأتمتة والذكاء الاصطناعي للمشاريع الصغيرة في العالم العربي",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "audience",
+              "value": "أصحاب مشاريع صغيرة، مستقلون، ومطورون مبتدئون في الأتمتة",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "voice",
+              "value": "عملي، واضح، قصصي، بدون مبالغة",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "ideasCount",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "c5",
+              "name": "feeds",
+              "value": "https://blog.n8n.io/rss/, https://hnrss.org/newest?q=automation, https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "telegramChatId",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5957091-523a-4b26-b7b4-11ff469e9480",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6645d0b2-e3e7-46d4-aa99-ddc78e95d642",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ",
+          "mode": "list",
+          "cachedResultName": "Content Calendar",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1707482565,
+          "mode": "list",
+          "cachedResultName": "Pillars",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ/edit#gid=1707482565"
+        },
+        "options": {}
+      },
+      "id": "6fd8d599-5fdd-49aa-bfd9-2c8c9e6eaea3",
+      "name": "Read Content Pillars",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "6e0174e4-41f5-430a-bab2-3fb6d218bf77",
+      "name": "Wait for All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const feeds = String($input.first().json.feeds || '').split(',').map(s => s.trim()).filter(s => /^https?:\\/\\//.test(s));\nreturn feeds.map(url => ({ json: { url } }));"
+      },
+      "id": "819f0c40-b443-4d2d-a132-ce022ea1dbf5",
+      "name": "Feed List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "89fda38d-9443-4fdc-a167-3510c0019ee9",
+      "name": "Read Trend Feeds",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        400
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ",
+          "mode": "list",
+          "cachedResultName": "Content Calendar",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1171793431,
+          "mode": "list",
+          "cachedResultName": "Ideas",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ/edit#gid=1171793431"
+        },
+        "options": {}
+      },
+      "id": "d9202cbf-a58f-4766-ae97-25051ee2a86f",
+      "name": "Read Past Ideas",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        592
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst pillars = $('Read Content Pillars').all().map(i => i.json).filter(p => p.Pillar);\nconst since = $now.minus({ days: 10 });\nconst seen = new Set();\nconst headlines = $('Read Trend Feeds').all().map(i => i.json)\n  .filter(h => h.title && h.link && !seen.has(h.title) && seen.add(h.title))\n  .filter(h => { const d = DateTime.fromISO(String(h.isoDate || h.pubDate || '')); return !d.isValid || d >= since; })\n  .slice(0, 25);\nconst past = $('Read Past Ideas').all().map(i => i.json.Title).filter(Boolean).slice(-40);\n\nconst pillarsText = pillars.length\n  ? pillars.map(p => '- ' + p.Pillar + (p.Description ? ': ' + p.Description : '') + (p.Weight ? ' (weight ' + p.Weight + ')' : '')).join('\\n')\n  : '- تعليم n8n خطوة بخطوة\\n- قصص قبل وبعد لمشاريع صغيرة\\n- كود مقابل نو كود\\n- أخبار الذكاء الاصطناعي بتطبيق عملي';\nconst trendsText = headlines.length ? headlines.map((h, i) => (i + 1) + '. ' + h.title + ' — ' + h.link).join('\\n') : '(no fresh headlines this week)';\nconst pastText = past.length ? past.map(t => '- ' + t).join('\\n') : '(none yet)';\n\nreturn [{ json: { ...cfg, pillarsText, trendsText, pastText, headlineCount: headlines.length, weekLabel: $now.plus({ weeks: 1 }).startOf('week').toFormat('yyyy-LL-dd') } }];"
+      },
+      "id": "ae83c1b1-610d-4b3c-9aa5-104dc7102310",
+      "name": "Build Research Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Niche: {{ $json.niche }}\nAudience: {{ $json.audience }}\nBrand voice: {{ $json.voice }}\nNumber of ideas: {{ $json.ideasCount }} (one per day, Sunday to Saturday)\n\nContent pillars:\n{{ $json.pillarsText }}\n\nThis week's trending headlines:\n{{ $json.trendsText }}\n\nIdeas already used (do NOT repeat or paraphrase):\n{{ $json.pastText }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a LinkedIn content strategist for the Arab tech scene. Produce a balanced weekly plan in Arabic: spread ideas across the pillars by weight, mix formats (post, carousel, short video, poll, story), and connect at least 2 ideas to a real headline from the list (put its URL in inspired_by, else empty string). Hooks must be specific and under 15 words, no clickbait, no fake numbers. Each outline has exactly 3 points. Hashtags: 3 max, mixed Arabic/English."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "dcea1fae-eb0d-4983-9119-bb55e65b4fd9",
+      "name": "Generate Weekly Ideas",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "5c18c1f8-afeb-42b2-b1a8-433229b7a9fb",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1352,
+        632
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "VzjDPfnvh8yVqpMV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"ideas\": [\n    {\n      \"day\": \"الأحد\",\n      \"pillar\": \"قصص قبل وبعد\",\n      \"title\": \"عنوان الفكرة\",\n      \"hook\": \"أول سطر يوقف التمرير\",\n      \"angle\": \"زاوية المعالجة\",\n      \"format\": \"carousel\",\n      \"outline\": [\"نقطة 1\", \"نقطة 2\", \"نقطة 3\"],\n      \"cta\": \"سؤال أو دعوة للتفاعل\",\n      \"hashtags\": \"#n8n #أتمتة\",\n      \"inspired_by\": \"https://...\"\n    }\n  ]\n}"
+      },
+      "id": "7a755bdd-8290-4f61-842c-0057d563b5f6",
+      "name": "Ideas Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1480,
+        632
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ideas = ($input.first().json.output || {}).ideas || [];\nconst start = $now.plus({ weeks: 1 }).startOf('week').minus({ days: 1 });\nconst week = start.toFormat('kkkk-WW');\nreturn ideas.map((idea, i) => ({ json: {\n  ideaId: 'IDEA-' + week + '-' + (i + 1),\n  suggestedDate: start.plus({ days: i }).set({ hour: 9, minute: 30 }).toFormat('yyyy-LL-dd HH:mm'),\n  day: idea.day || '',\n  pillar: idea.pillar || '',\n  title: idea.title || '',\n  hook: idea.hook || '',\n  angle: idea.angle || '',\n  format: idea.format || 'post',\n  outline: (idea.outline || []).map((p, n) => (n + 1) + ') ' + p).join('  '),\n  cta: idea.cta || '',\n  hashtags: idea.hashtags || '',\n  source: idea.inspired_by || '',\n  status: 'idea'\n} }));"
+      },
+      "id": "cd992027-58af-40f7-98d6-3afdfce72ac3",
+      "name": "Prepare Idea Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ",
+          "mode": "list",
+          "cachedResultName": "Content Calendar",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fv3fqv-7z4l64qW_lknPRD_Q4rHZFAhgfb__V2Jj0XQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Ideas"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Idea ID": "={{ $json.ideaId }}",
+            "Suggested Date": "={{ $json.suggestedDate }}",
+            "Pillar": "={{ $json.pillar }}",
+            "Format": "={{ $json.format }}",
+            "Title": "={{ $json.title }}",
+            "Hook": "={{ $json.hook }}",
+            "Angle": "={{ $json.angle }}",
+            "Outline": "={{ $json.outline }}",
+            "CTA": "={{ $json.cta }}",
+            "Hashtags": "={{ $json.hashtags }}",
+            "Source": "={{ $json.source }}",
+            "Status": "={{ $json.status }}"
+          },
+          "schema": [
+            {
+              "id": "Idea ID",
+              "displayName": "Idea ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Suggested Date",
+              "displayName": "Suggested Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Format",
+              "displayName": "Format",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Angle",
+              "displayName": "Angle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outline",
+              "displayName": "Outline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a3842a57-5908-4a71-adb1-3734aedfe949",
+      "name": "Save Ideas to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1920,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5TbVcuHpH8WDC62c",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst brief = $('Build Research Brief').first().json;\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst icons = { post: '📝', carousel: '🎠', video: '🎬', 'short video': '🎬', poll: '📊', story: '📖' };\nconst lines = ['🗓️ <b>خطة محتوى الأسبوع</b> (يبدأ ' + brief.weekLabel + ')', '📰 اعتمدت على ' + brief.headlineCount + ' خبرًا حديثًا', ''];\nrows.forEach(r => {\n  lines.push((icons[String(r.format).toLowerCase()] || '💡') + ' <b>' + esc(r.day) + ': ' + esc(r.title) + '</b>');\n  lines.push('   🪝 ' + esc(r.hook));\n  lines.push('   🏷️ ' + esc(r.pillar) + ' · ' + esc(r.format) + (r.source ? ' · <a href=\"' + esc(r.source) + '\">المصدر</a>' : ''));\n  lines.push('');\n});\nlines.push('✅ حُفظت الأفكار في تبويب Ideas. انقل ما توافق عليه إلى Posts ليُنشر تلقائيًا (مشروع 07).');\nreturn [{ json: { chatId: brief.telegramChatId, text: lines.join('\\n') } }];"
+      },
+      "id": "7501fcc8-25f9-4379-9ce5-6c550e16c75c",
+      "name": "Build Telegram Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "1617a86a-a47d-45e8-a082-28431edcd190",
+      "name": "Send Weekly Brief",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        496
+      ],
+      "webhookId": "3e3296eb-81bb-4f57-ba4f-2323a3a67b62",
+      "credentials": {
+        "telegramApi": {
+          "id": "efI9hWfgG8xTFiNH",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 11 - Weekly Content Ideas Engine\nEvery Sunday you get a ready content plan for the week.\n\n1. Reads your **content pillars** and the ideas you already used (no repeats).\n2. Pulls fresh headlines from RSS feeds (n8n blog, Hacker News, The Verge AI by default).\n3. AI writes 7 balanced ideas: hook, angle, format, 3-point outline, CTA and hashtags, linking some ideas to real news.\n4. Ideas are saved to the `Ideas` tab and a brief is sent on Telegram.\n\nWorks with project **07**: move approved ideas to `Posts` and they get published automatically.",
+        "height": 340,
+        "width": 600,
+        "color": 4
+      },
+      "id": "7849e7ce-3e70-44a5-af8e-6969ffdb4824",
+      "name": "Sticky Note c2507b52",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Sunday 09:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read Content Pillars",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Feed List",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Past Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Content Pillars": {
+      "main": [
+        [
+          {
+            "node": "Wait for All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for All Sources": {
+      "main": [
+        [
+          {
+            "node": "Build Research Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feed List": {
+      "main": [
+        [
+          {
+            "node": "Read Trend Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Trend Feeds": {
+      "main": [
+        [
+          {
+            "node": "Wait for All Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Past Ideas": {
+      "main": [
+        [
+          {
+            "node": "Wait for All Sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Build Research Brief": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly Ideas": {
+      "main": [
+        [
+          {
+            "node": "Prepare Idea Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Weekly Ideas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ideas Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Weekly Ideas",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Idea Rows": {
+      "main": [
+        [
+          {
+            "node": "Save Ideas to Sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Telegram Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Brief": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timezone": "Asia/Hebron"
+  },
+  "versionId": "4a039eee-3f51-459b-9985-eb341b7d677b",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "c71fb6e4b9e3a1343a47139290574cd9f05b4cb94ebed378cfb037b8cfd25428"
+  },
+  "nodeGroups": [],
+  "id": "WR5rPJo5qBZ1mNbM",
+  "tags": []
+}
