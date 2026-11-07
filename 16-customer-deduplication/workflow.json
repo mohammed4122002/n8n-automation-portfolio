@@ -1,0 +1,514 @@
+{
+  "name": "اليوم 16 - إزالة التكرار من قائمة العملاء (No-code مقابل Code)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "6d0e8d21-bc8f-496a-ab83-e47e2c585fb0",
+      "name": "Start Demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"customers\": [\n    {\n      \"name\": \"Ahmed Ali\",\n      \"email\": \"ahmed.ali@gmail.com\",\n      \"phone\": \"+970 599 123 456\",\n      \"city\": \"Gaza\",\n      \"updated_at\": \"2026-01-10\"\n    },\n    {\n      \"name\": \"ahmed ali \",\n      \"email\": \" Ahmed.Ali@Gmail.com \",\n      \"phone\": \"0599123456\",\n      \"city\": \"\",\n      \"updated_at\": \"2026-03-02\"\n    },\n    {\n      \"name\": \"Sara Khaled\",\n      \"email\": \"sara.k@outlook.com\",\n      \"phone\": \"0598765432\",\n      \"city\": \"Ramallah\",\n      \"updated_at\": \"2026-02-01\"\n    },\n    {\n      \"name\": \"Sara K.\",\n      \"email\": \"sara.khaled@company.ps\",\n      \"phone\": \"+970598765432\",\n      \"city\": \"Ramallah\",\n      \"updated_at\": \"2026-04-15\"\n    },\n    {\n      \"name\": \"Omar Hassan\",\n      \"email\": \"omar@startup.io\",\n      \"phone\": \"0567111222\",\n      \"city\": \"Nablus\",\n      \"updated_at\": \"2026-01-20\"\n    },\n    {\n      \"name\": \"Omar Hassan\",\n      \"email\": \"omar@startup.io\",\n      \"phone\": \"0567111222\",\n      \"city\": \"Nablus\",\n      \"updated_at\": \"2026-01-20\"\n    },\n    {\n      \"name\": \"Lina Mahmoud\",\n      \"email\": \"lina.m@yahoo.com\",\n      \"phone\": \"\",\n      \"city\": \"Hebron\",\n      \"updated_at\": \"2026-02-11\"\n    },\n    {\n      \"name\": \"Lina Mahmoud\",\n      \"email\": \"LINA.M@YAHOO.COM\",\n      \"phone\": \"0595333444\",\n      \"city\": \"\",\n      \"updated_at\": \"2026-05-05\"\n    },\n    {\n      \"name\": \"Yousef Nasser\",\n      \"email\": \"yousef.n@gmail.com\",\n      \"phone\": \"0592444555\",\n      \"city\": \"Jenin\",\n      \"updated_at\": \"2026-03-10\"\n    },\n    {\n      \"name\": \"Mona Saleh\",\n      \"email\": \"mona.saleh@gmail.com\",\n      \"phone\": \"0599888777\",\n      \"city\": \"Gaza\",\n      \"updated_at\": \"2026-02-28\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "1fe8a2a0-d948-443e-a69d-6a4890a8f403",
+      "name": "Sample Customer List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "customers",
+        "options": {}
+      },
+      "id": "f781bfa2-17d3-40ea-89a8-b484117df6eb",
+      "name": "Split Customers",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "name",
+              "type": "string",
+              "value": "={{ ($json.name || \"\").trim() }}"
+            },
+            {
+              "id": "n2",
+              "name": "email",
+              "type": "string",
+              "value": "={{ ($json.email || \"\").trim().toLowerCase() }}"
+            },
+            {
+              "id": "n3",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ ($json.phone || \"\").replace(/\\D/g, \"\").replace(/^970/, \"0\") }}"
+            },
+            {
+              "id": "n4",
+              "name": "city",
+              "type": "string",
+              "value": "={{ $json.city }}"
+            },
+            {
+              "id": "n5",
+              "name": "updated_at",
+              "type": "string",
+              "value": "={{ $json.updated_at }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6080afc0-cd28-42a2-98ee-9870732d53dd",
+      "name": "Normalize Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        848,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "updated_at",
+              "order": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bcb3330f-e3c3-4793-983f-fe8fe7ed8222",
+      "name": "Sort Newest First",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "email",
+        "options": {}
+      },
+      "id": "2328ba38-df1d-4c25-aed7-5d4d48f60419",
+      "name": "Remove Duplicates by Email",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "customers",
+        "options": {}
+      },
+      "id": "96ca6ec3-f24d-47d6-96eb-9b2975b04a74",
+      "name": "Collect No-code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "nocode_unique_count",
+              "type": "number",
+              "value": "={{ $json.customers.length }}"
+            },
+            {
+              "id": "a2",
+              "name": "nocode_removed_count",
+              "type": "number",
+              "value": "={{ $(\"Split Customers\").all().length - $json.customers.length }}"
+            },
+            {
+              "id": "a3",
+              "name": "nocode_customers",
+              "type": "array",
+              "value": "={{ $json.customers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1da8095-923a-47f0-b5dc-b2dbcf99484d",
+      "name": "No-code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1744,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "8fa23b92-2409-4c04-b0d6-1e4130fccb4e",
+      "name": "Combine Both Methods",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2080,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Smart dedupe: same person if email OR phone matches (after normalization).\n// Keeps the newest record and fills its empty fields from older duplicates.\nconst normEmail = (e) => String(e || \"\").trim().toLowerCase();\nconst normPhone = (p) => String(p || \"\").replace(/\\D/g, \"\").replace(/^970/, \"0\");\n\nconst rows = $input.all().map((item, idx) => ({\n  idx,\n  name: String(item.json.name || \"\").trim(),\n  email: normEmail(item.json.email),\n  phone: normPhone(item.json.phone),\n  city: String(item.json.city || \"\").trim(),\n  updated_at: String(item.json.updated_at || \"\"),\n}));\n\n// Union-Find to group records that share an email or a phone\nconst parent = rows.map((_, i) => i);\nconst find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));\nconst union = (a, b) => { parent[find(a)] = find(b); };\nconst seen = {};\nfor (const r of rows) {\n  for (const key of [\"email:\" + r.email, \"phone:\" + r.phone]) {\n    if (key.endsWith(\":\")) continue;\n    if (seen[key] !== undefined) union(r.idx, seen[key]);\n    else seen[key] = r.idx;\n  }\n}\n\nconst groups = {};\nfor (const r of rows) {\n  const root = find(r.idx);\n  (groups[root] = groups[root] || []).push(r);\n}\n\nreturn Object.values(groups).map((group) => {\n  group.sort((a, b) => b.updated_at.localeCompare(a.updated_at));\n  const merged = { ...group[0] };\n  for (const older of group.slice(1)) {\n    for (const f of [\"name\", \"email\", \"phone\", \"city\"]) {\n      if (!merged[f] && older[f]) merged[f] = older[f];\n    }\n  }\n  delete merged.idx;\n  merged.merged_records = group.length;\n  merged.all_emails = [...new Set(group.map((g) => g.email).filter(Boolean))];\n  return { json: merged };\n});"
+      },
+      "id": "7f3673b5-2194-41ad-8bb8-875d028cdf64",
+      "name": "Smart Dedupe (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "customers",
+        "options": {}
+      },
+      "id": "9e6411bc-97df-4fcb-9fe9-e7a6d78b9203",
+      "name": "Collect Code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "code_unique_count",
+              "type": "number",
+              "value": "={{ $json.customers.length }}"
+            },
+            {
+              "id": "b2",
+              "name": "code_removed_count",
+              "type": "number",
+              "value": "={{ $(\"Split Customers\").all().length - $json.customers.length }}"
+            },
+            {
+              "id": "b3",
+              "name": "code_customers",
+              "type": "array",
+              "value": "={{ $json.customers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d15c52f0-2465-48a6-b003-5d87bfdb7e6a",
+      "name": "Code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1520,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "total_input_records",
+              "type": "number",
+              "value": "={{ $(\"Split Customers\").all().length }}"
+            },
+            {
+              "id": "r2",
+              "name": "nocode_unique_count",
+              "type": "number",
+              "value": "={{ $json.nocode_unique_count }}"
+            },
+            {
+              "id": "r3",
+              "name": "code_unique_count",
+              "type": "number",
+              "value": "={{ $json.code_unique_count }}"
+            },
+            {
+              "id": "r4",
+              "name": "extra_duplicates_caught_by_code",
+              "type": "number",
+              "value": "={{ $json.nocode_unique_count - $json.code_unique_count }}"
+            },
+            {
+              "id": "r5",
+              "name": "verdict",
+              "type": "string",
+              "value": "={{ $json.nocode_unique_count === $json.code_unique_count ? \"الطريقتان أعطتا نفس النتيجة: استخدم No-code لأنه أبسط وأسهل في الصيانة.\" : \"الكود اكتشف \" + ($json.nocode_unique_count - $json.code_unique_count) + \" تكرار إضافي (نفس الشخص بإيميل مختلف ونفس الهاتف) ودمج البيانات الناقصة.\" }}"
+            },
+            {
+              "id": "r6",
+              "name": "rule_of_thumb",
+              "type": "string",
+              "value": "No-code: عندما يكون التكرار على حقل واحد واضح. Code: عندما يكون التكرار على أكثر من حقل (إيميل أو هاتف) أو تحتاج دمج بيانات السجلات."
+            },
+            {
+              "id": "r7",
+              "name": "nocode_customers",
+              "type": "array",
+              "value": "={{ $json.nocode_customers }}"
+            },
+            {
+              "id": "r8",
+              "name": "code_customers",
+              "type": "array",
+              "value": "={{ $json.code_customers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c3ec292-1ca5-4ad8-81ea-d1db79d3fdd6",
+      "name": "Comparison Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2304,
+        336
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Demo": {
+      "main": [
+        [
+          {
+            "node": "Sample Customer List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Customer List": {
+      "main": [
+        [
+          {
+            "node": "Split Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Customers": {
+      "main": [
+        [
+          {
+            "node": "Normalize Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Smart Dedupe (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Fields": {
+      "main": [
+        [
+          {
+            "node": "Sort Newest First",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort Newest First": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates by Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates by Email": {
+      "main": [
+        [
+          {
+            "node": "Collect No-code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect No-code Result": {
+      "main": [
+        [
+          {
+            "node": "No-code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No-code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Both Methods": {
+      "main": [
+        [
+          {
+            "node": "Comparison Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Dedupe (Code)": {
+      "main": [
+        [
+          {
+            "node": "Collect Code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Code Result": {
+      "main": [
+        [
+          {
+            "node": "Code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8b4e66b4-b005-445b-8b39-5cf66d0c8e9a",
+  "meta": {
+    "instanceId": "78adac364530b856d593fdaf88ef9bb6bf9f0735fc378220302f911b3ce7373e"
+  },
+  "nodeGroups": [
+    {
+      "id": "028731c9-b36c-4ae4-87b2-6c82a2e2654e",
+      "name": "Load customer list",
+      "nodeIds": [
+        "1fe8a2a0-d948-443e-a69d-6a4890a8f403",
+        "f781bfa2-17d3-40ea-89a8-b484117df6eb"
+      ],
+      "description": "Ten sample customers with real-world mess: casing, spaces, phone formats, and repeats"
+    },
+    {
+      "id": "419412e6-e820-49c1-9a9d-d4ca13c96379",
+      "name": "Dedupe without code",
+      "nodeIds": [
+        "6080afc0-cd28-42a2-98ee-9870732d53dd",
+        "bcb3330f-e3c3-4793-983f-fe8fe7ed8222",
+        "2328ba38-df1d-4c25-aed7-5d4d48f60419",
+        "96ca6ec3-f24d-47d6-96eb-9b2975b04a74",
+        "b1da8095-923a-47f0-b5dc-b2dbcf99484d"
+      ],
+      "description": "Cleans emails and phones, keeps the newest record, drops repeats sharing the same email"
+    },
+    {
+      "id": "d3d545f0-cc1c-4446-ba18-709fcf0d18ea",
+      "name": "Dedupe with code",
+      "nodeIds": [
+        "7f3673b5-2194-41ad-8bb8-875d028cdf64",
+        "9e6411bc-97df-4fcb-9fe9-e7a6d78b9203",
+        "d15c52f0-2465-48a6-b003-5d87bfdb7e6a"
+      ],
+      "description": "Treats records sharing an email or a phone as one person and fills missing details"
+    },
+    {
+      "id": "de258fa4-1778-4168-b280-1d7d09e1c23e",
+      "name": "Compare both methods",
+      "nodeIds": [
+        "8fa23b92-2409-4c04-b0d6-1e4130fccb4e",
+        "8c3ec292-1ca5-4ad8-81ea-d1db79d3fdd6"
+      ],
+      "description": "Side-by-side counts, extra repeats the script caught, and when to pick each approach"
+    }
+  ],
+  "id": "f8EqfhQ3o1zFGyc5",
+  "tags": []
+}

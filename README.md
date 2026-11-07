@@ -6,12 +6,12 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-خمسة عشر workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، توليد أفكار المحتوى، استخراج الفواتير، بناء قاعدة معرفة داخلية، تقييم العملاء، وتنظيف البيانات — مع شرح وصور وطريقة استخدام لكل مشروع.
+عشرون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، توليد أفكار المحتوى، استخراج الفواتير، بناء قاعدة معرفة داخلية، تقييم العملاء، تنظيف البيانات، ومعالجة وربط الخدمات — مع شرح وصور وطريقة استخدام لكل مشروع.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-15-24B89A?style=for-the-badge" alt="Fifteen projects">
+  <img src="https://img.shields.io/badge/Projects-20-24B89A?style=for-the-badge" alt="Twenty projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -41,6 +41,11 @@
 | **13** | **مساعد المعرفة الداخلي (RAG)** | يجيب على أسئلة الفريق من مستندات الشركة فقط مع ذكر المصدر. | [شرح المشروع والصور ←](./13-rag-knowledge-agent/README.md) |
 | **14** | **تقييم العملاء المحتملين وتوزيعهم** | يصنّف العملاء ساخنًا أو دافئًا أو باردًا ويرسل لكل فئة ردًا مناسبًا تلقائيًا. | [شرح المشروع والصور ←](./14-ai-lead-scoring-and-routing/README.md) |
 | **15** | **تنظيف بيانات جهات الاتصال** | يقارن مسارَي تنظيف (كود وبدون كود) ويرسل تقرير النتائج على Telegram. | [شرح المشروع والصور ←](./15-contact-data-cleaning/README.md) |
+| **16** | **إزالة التكرار من قائمة العملاء** | يقارن إزالة التكرار بالبريد فقط مع الدمج الذكي حسب البريد أو الهاتف. | [شرح المشروع والصور ←](./16-customer-deduplication/README.md) |
+| **17** | **تحويل JSON معقد إلى جدول** | يحوّل الطلبات المتداخلة إلى صفوف وأعمدة قابلة للاستخدام. | [شرح المشروع والصور ←](./17-nested-json-to-table/README.md) |
+| **18** | **استخراج بيانات التواصل بـ Regex** | يلتقط الإيميلات والأرقام من رسائل متعددة الصيغ. | [شرح المشروع والصور ←](./18-regex-contact-extraction/README.md) |
+| **19** | **حساب العمولات المخصصة** | يقارن النسب الثابتة بمعادلة تشمل شرائح ومكافآت وخصومات وحدًا أعلى. | [شرح المشروع والصور ←](./19-javascript-commission-calculator/README.md) |
+| **20** | **ربط أي API عبر HTTP Request** | يجلب طقس أربع مدن ويقارن الحقول الجاهزة بتفسير البيانات بالكود. | [شرح المشروع والصور ←](./20-http-request-weather-api/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -85,7 +90,15 @@
   </tr>
   <tr>
     <td align="center"><strong>15 · تنظيف بيانات جهات الاتصال</strong><br><a href="./15-contact-data-cleaning/README.md"><img src="./15-contact-data-cleaning/screenshots/workflow-overview.png" alt="مخطط تنظيف بيانات جهات الاتصال في n8n" width="420"></a></td>
-    <td align="center"></td>
+    <td align="center"><strong>16 · إزالة التكرار من العملاء</strong><br><a href="./16-customer-deduplication/README.md"><img src="./16-customer-deduplication/screenshots/workflow-overview.png" alt="مخطط مقارنة طرق إزالة تكرار العملاء في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>17 · تحويل JSON إلى جدول</strong><br><a href="./17-nested-json-to-table/README.md"><img src="./17-nested-json-to-table/screenshots/workflow-overview.png" alt="مخطط تحويل JSON متداخل إلى جدول في n8n" width="420"></a></td>
+    <td align="center"><strong>18 · استخراج بيانات التواصل</strong><br><a href="./18-regex-contact-extraction/README.md"><img src="./18-regex-contact-extraction/screenshots/workflow-overview.png" alt="مخطط استخراج الأرقام والإيميلات من الرسائل في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>19 · حساب العمولات</strong><br><a href="./19-javascript-commission-calculator/README.md"><img src="./19-javascript-commission-calculator/screenshots/workflow-overview.png" alt="مخطط حساب العمولات ومقارنة النتائج في n8n" width="420"></a></td>
+    <td align="center"><strong>20 · ربط API الطقس</strong><br><a href="./20-http-request-weather-api/README.md"><img src="./20-http-request-weather-api/screenshots/workflow-overview.svg" alt="مخطط ربط Open-Meteo عبر HTTP Request ومقارنة النتائج" width="420"></a></td>
   </tr>
 </table>
 
@@ -129,7 +142,12 @@
 ├── 12-invoice-extraction-and-validation/
 ├── 13-rag-knowledge-agent/
 ├── 14-ai-lead-scoring-and-routing/
-└── 15-contact-data-cleaning/
+├── 15-contact-data-cleaning/
+├── 16-customer-deduplication/
+├── 17-nested-json-to-table/
+├── 18-regex-contact-extraction/
+├── 19-javascript-commission-calculator/
+└── 20-http-request-weather-api/
 ```
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.

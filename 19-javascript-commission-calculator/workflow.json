@@ -1,0 +1,673 @@
+{
+  "name": "اليوم 19 - معادلة عمولة مخصصة بـ JavaScript (No-code مقابل Code)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "9790f956-88d7-4141-81a5-3d3f8442bf1d",
+      "name": "Start Demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"month\": \"2026-10\",\n  \"reps\": [\n    {\n      \"rep\": \"Ahmed Ali\",\n      \"sales\": 4200,\n      \"returns\": 100,\n      \"new_clients\": 1\n    },\n    {\n      \"rep\": \"Sara Khaled\",\n      \"sales\": 7800,\n      \"returns\": 200,\n      \"new_clients\": 4\n    },\n    {\n      \"rep\": \"Omar Hassan\",\n      \"sales\": 12500,\n      \"returns\": 300,\n      \"new_clients\": 2\n    },\n    {\n      \"rep\": \"Lina Mahmoud\",\n      \"sales\": 9500,\n      \"returns\": 1500,\n      \"new_clients\": 3\n    },\n    {\n      \"rep\": \"Yousef Nasser\",\n      \"sales\": 38000,\n      \"returns\": 500,\n      \"new_clients\": 5\n    },\n    {\n      \"rep\": \"Mona Saleh\",\n      \"sales\": 3000,\n      \"returns\": 0,\n      \"new_clients\": 3\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "06a10f7e-8d45-4023-9346-539572935aa6",
+      "name": "Sample Monthly Sales",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "reps",
+        "options": {}
+      },
+      "id": "87d13b59-1c2d-4886-8a66-4d98b6146f87",
+      "name": "Split Sales Reps",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.sales }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    },
+                    "rightValue": 5000
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Under 5K"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.sales }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lt"
+                    },
+                    "rightValue": 10000
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "5K-10K"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.sales }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "rightValue": 10000
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Over 10K"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72ccd6b4-efcf-449e-8a91-7d783b66abda",
+      "name": "Route by Sales Tier",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        800,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "rep",
+              "type": "string",
+              "value": "={{ $json.rep }}"
+            },
+            {
+              "id": "t2",
+              "name": "sales",
+              "type": "number",
+              "value": "={{ $json.sales }}"
+            },
+            {
+              "id": "t3",
+              "name": "rate",
+              "type": "number",
+              "value": 0.03
+            },
+            {
+              "id": "t4",
+              "name": "commission",
+              "type": "number",
+              "value": "={{ Math.round($json.sales * 0.03) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "735da069-fc69-442b-bfdc-eff1291d1cfb",
+      "name": "Flat 3% Rate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1024,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "0a92e6f4-645f-442c-8762-43f689c58330",
+      "name": "Merge Tiers",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1248,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "rep",
+              "type": "string",
+              "value": "={{ $json.rep }}"
+            },
+            {
+              "id": "t2",
+              "name": "sales",
+              "type": "number",
+              "value": "={{ $json.sales }}"
+            },
+            {
+              "id": "t3",
+              "name": "rate",
+              "type": "number",
+              "value": 0.05
+            },
+            {
+              "id": "t4",
+              "name": "commission",
+              "type": "number",
+              "value": "={{ Math.round($json.sales * 0.05) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "96f82180-0531-45b9-8f68-9f1696a3aedc",
+      "name": "Flat 5% Rate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1024,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "rep",
+              "type": "string",
+              "value": "={{ $json.rep }}"
+            },
+            {
+              "id": "t2",
+              "name": "sales",
+              "type": "number",
+              "value": "={{ $json.sales }}"
+            },
+            {
+              "id": "t3",
+              "name": "rate",
+              "type": "number",
+              "value": 0.08
+            },
+            {
+              "id": "t4",
+              "name": "commission",
+              "type": "number",
+              "value": "={{ Math.round($json.sales * 0.08) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2528a492-cd2c-4381-b180-631a849f47e5",
+      "name": "Flat 8% Rate",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1024,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "588a9951-16c9-442f-bd8d-21439c0cb749",
+      "name": "Collect No-code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "nocode_total_commission",
+              "type": "number",
+              "value": "={{ $json.rows.reduce((s, r) => s + r.commission, 0) }}"
+            },
+            {
+              "id": "a2",
+              "name": "nocode_results",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4f20c772-98d8-4826-af77-e5f0ae337f13",
+      "name": "No-code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1696,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "8e143f71-ba89-4e81-a5ac-5ecfd4ac69dc",
+      "name": "Combine Both Methods",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2112,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Company commission policy, in one place and easy to change:\n// 1) Tiers are MARGINAL on net sales (sales - returns): first 5,000 at 3%, 5,000-10,000 at 5%, above 10,000 at 8%\n// 2) Bonus +200 when the rep brought 3 or more new clients\n// 3) If returns exceed 10% of sales, the commission is cut by 50%\n// 4) Monthly cap: 2,000\nconst TIERS = [\n  { upTo: 5000, rate: 0.03 },\n  { upTo: 10000, rate: 0.05 },\n  { upTo: Infinity, rate: 0.08 },\n];\nconst NEW_CLIENT_BONUS = 200;\nconst NEW_CLIENT_MIN = 3;\nconst RETURN_LIMIT = 0.10;\nconst PENALTY_FACTOR = 0.5;\nconst CAP = 2000;\n\nreturn $input.all().map((item) => {\n  const { rep, sales = 0, returns = 0, new_clients = 0 } = item.json;\n  const net = Math.max(0, sales - returns);\n\n  let tiered = 0;\n  let lower = 0;\n  for (const t of TIERS) {\n    if (net <= lower) break;\n    tiered += (Math.min(net, t.upTo) - lower) * t.rate;\n    lower = t.upTo;\n  }\n\n  const notes = [];\n  let commission = tiered;\n  if (new_clients >= NEW_CLIENT_MIN) {\n    commission += NEW_CLIENT_BONUS;\n    notes.push('مكافأة عملاء جدد +200');\n  }\n  const returnRate = sales > 0 ? returns / sales : 0;\n  if (returnRate > RETURN_LIMIT) {\n    commission *= PENALTY_FACTOR;\n    notes.push('مرتجعات ' + Math.round(returnRate * 100) + '% تخصم نصف العمولة');\n  }\n  if (commission > CAP) {\n    commission = CAP;\n    notes.push('وصل للحد الأعلى 2000');\n  }\n\n  return {\n    json: {\n      rep,\n      sales,\n      net_sales: net,\n      tiered_commission: Math.round(tiered),\n      commission: Math.round(commission),\n      notes: notes.length ? notes.join(' | ') : 'عمولة الشرائح فقط',\n    },\n  };\n});"
+      },
+      "id": "0511f133-b95e-4a95-8c85-2f3ab12d60a9",
+      "name": "Commission Formula (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "5db9aadf-2bbe-4a18-99d3-4f7b73d1d14e",
+      "name": "Collect Code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "code_total_commission",
+              "type": "number",
+              "value": "={{ $json.rows.reduce((s, r) => s + r.commission, 0) }}"
+            },
+            {
+              "id": "b2",
+              "name": "code_results",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f21192e2-5232-46ee-b7f6-4b6544b7db40",
+      "name": "Code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "reps_count",
+              "type": "number",
+              "value": "={{ $json.code_results.length }}"
+            },
+            {
+              "id": "r2",
+              "name": "nocode_total_commission",
+              "type": "number",
+              "value": "={{ $json.nocode_total_commission }}"
+            },
+            {
+              "id": "r3",
+              "name": "code_total_commission",
+              "type": "number",
+              "value": "={{ $json.code_total_commission }}"
+            },
+            {
+              "id": "r4",
+              "name": "overpaid_by_nocode",
+              "type": "number",
+              "value": "={{ $json.nocode_total_commission - $json.code_total_commission }}"
+            },
+            {
+              "id": "r5",
+              "name": "per_rep",
+              "type": "array",
+              "value": "={{ $json.code_results.map(c => ({ rep: c.rep, nocode: ($json.nocode_results.find(n => n.rep === c.rep) || {}).commission, code: c.commission, notes: c.notes })) }}"
+            },
+            {
+              "id": "r6",
+              "name": "verdict",
+              "type": "string",
+              "value": "={{ \"No-code حسب نسبة ثابتة على كامل المبيعات فدفع \" + $json.nocode_total_commission + \"، بينما سياسة الشركة الحقيقية بالكود (شرائح تصاعدية + مكافأة + خصم مرتجعات + حد أعلى) تعطي \" + $json.code_total_commission + \". الفرق \" + ($json.nocode_total_commission - $json.code_total_commission) + \" في شهر واحد.\" }}"
+            },
+            {
+              "id": "r7",
+              "name": "rule_of_thumb",
+              "type": "string",
+              "value": "No-code: عندما تكون العمولة نسبة واحدة أو شرائح بسيطة تراها بالعين على الكانفس. Code: عندما تتراكم الشروط (شرائح تصاعدية، مكافآت، خصومات، حد أعلى) وتريد المعادلة كلها في مكان واحد سهل التعديل."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f4e03aa-a90a-4d94-8ab7-8c2246331957",
+      "name": "Comparison Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2336,
+        672
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Demo": {
+      "main": [
+        [
+          {
+            "node": "Sample Monthly Sales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Monthly Sales": {
+      "main": [
+        [
+          {
+            "node": "Split Sales Reps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Sales Reps": {
+      "main": [
+        [
+          {
+            "node": "Route by Sales Tier",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Commission Formula (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Sales Tier": {
+      "main": [
+        [
+          {
+            "node": "Flat 3% Rate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flat 5% Rate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flat 8% Rate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flat 3% Rate": {
+      "main": [
+        [
+          {
+            "node": "Merge Tiers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Tiers": {
+      "main": [
+        [
+          {
+            "node": "Collect No-code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flat 5% Rate": {
+      "main": [
+        [
+          {
+            "node": "Merge Tiers",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Flat 8% Rate": {
+      "main": [
+        [
+          {
+            "node": "Merge Tiers",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Collect No-code Result": {
+      "main": [
+        [
+          {
+            "node": "No-code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No-code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Both Methods": {
+      "main": [
+        [
+          {
+            "node": "Comparison Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Commission Formula (Code)": {
+      "main": [
+        [
+          {
+            "node": "Collect Code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Code Result": {
+      "main": [
+        [
+          {
+            "node": "Code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f92c8194-f75c-467f-b635-6b19e4ab505b",
+  "meta": {
+    "instanceId": "78adac364530b856d593fdaf88ef9bb6bf9f0735fc378220302f911b3ce7373e"
+  },
+  "nodeGroups": [
+    {
+      "id": "cf1470f7-a62a-4963-98eb-81f07cdb511b",
+      "name": "Load monthly sales",
+      "nodeIds": [
+        "06a10f7e-8d45-4023-9346-539572935aa6",
+        "87d13b59-1c2d-4886-8a66-4d98b6146f87"
+      ],
+      "description": "Six sales reps for October with sales, returns, and new clients brought in"
+    },
+    {
+      "id": "91a50684-a539-433f-94b8-46559ccfd73a",
+      "name": "Commission without code",
+      "nodeIds": [
+        "72ccd6b4-efcf-449e-8a91-7d783b66abda",
+        "735da069-fc69-442b-bfdc-eff1291d1cfb",
+        "96f82180-0531-45b9-8f68-9f1696a3aedc",
+        "2528a492-cd2c-4381-b180-631a849f47e5",
+        "0a92e6f4-645f-442c-8762-43f689c58330",
+        "588a9951-16c9-442f-bd8d-21439c0cb749",
+        "4f20c772-98d8-4826-af77-e5f0ae337f13"
+      ],
+      "description": "Routes each rep to a tier and applies one flat rate to their whole sales amount"
+    },
+    {
+      "id": "44f2434f-18dd-48f7-8dca-c7ff57568c03",
+      "name": "Commission with code",
+      "nodeIds": [
+        "0511f133-b95e-4a95-8c85-2f3ab12d60a9",
+        "5db9aadf-2bbe-4a18-99d3-4f7b73d1d14e",
+        "f21192e2-5232-46ee-b7f6-4b6544b7db40"
+      ],
+      "description": "Full company policy: stepped tiers on net sales, new-client bonus, returns penalty, monthly cap"
+    },
+    {
+      "id": "cf6469f0-2230-4766-bb32-94de1f32006c",
+      "name": "Compare both methods",
+      "nodeIds": [
+        "8e143f71-ba89-4e81-a5ac-5ecfd4ac69dc",
+        "9f4e03aa-a90a-4d94-8ab7-8c2246331957"
+      ],
+      "description": "Per-rep payouts side by side, how much the simple rule overpays, and when to pick each"
+    }
+  ],
+  "id": "m7nwNIfZmeINiuuT",
+  "tags": []
+}

@@ -1,0 +1,3 @@
+Pillow>=11.0
+arabic-reshaper>=3.0
+python-bidi>=0.6

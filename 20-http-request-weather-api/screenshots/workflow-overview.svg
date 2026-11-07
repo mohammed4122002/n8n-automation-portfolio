@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title description">
+  <title id="title">ربط Open-Meteo عبر HTTP Request في n8n</title>
+  <desc id="description">أربع مدن ترسل طلبات الطقس إلى Open-Meteo، ثم تتفرع النتائج إلى اختيار حقول بدون كود وتفسير بالكود قبل تقرير المقارنة.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7f8fa; }
+      .node { fill: #fff; stroke: #d7dce2; stroke-width: 2; rx: 14; }
+      .accent { fill: #fff3f0; stroke: #ff6d5a; stroke-width: 2; rx: 14; }
+      .code { fill: #f3f0ff; stroke: #8065e8; stroke-width: 2; rx: 14; }
+      .title { font: 700 19px "Segoe UI", Arial, sans-serif; fill: #17212b; }
+      .label { font: 15px "Segoe UI", Arial, sans-serif; fill: #51606d; }
+      .small { font: 13px "Segoe UI", Arial, sans-serif; fill: #65717c; }
+      .line { fill: none; stroke: #9aa5b1; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9aa5b1"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1200" height="420" rx="18"/>
+  <text x="600" y="46" text-anchor="middle" class="title">توقعات الطقس لأربع مدن فلسطينية · n8n + Open-Meteo</text>
+  <rect class="node" x="35" y="158" width="155" height="92"/>
+  <text x="112" y="193" text-anchor="middle" class="title">Start Demo</text>
+  <text x="112" y="220" text-anchor="middle" class="label">تشغيل يدوي</text>
+  <path class="line" d="M190 204 H230"/>
+  <rect class="node" x="238" y="158" width="170" height="92"/>
+  <text x="323" y="193" text-anchor="middle" class="title">أربع مدن</text>
+  <text x="323" y="220" text-anchor="middle" class="label">إحداثيات كل مدينة</text>
+  <path class="line" d="M408 204 H448"/>
+  <rect class="accent" x="456" y="145" width="220" height="118"/>
+  <text x="566" y="184" text-anchor="middle" class="title">HTTP Request</text>
+  <text x="566" y="211" text-anchor="middle" class="label">Open-Meteo · بلا API key</text>
+  <text x="566" y="237" text-anchor="middle" class="small">الطقس الحالي + 24 ساعة</text>
+  <path class="line" d="M676 204 H720 V113 H752"/>
+  <path class="line" d="M720 204 V295 H752"/>
+  <rect class="node" x="760" y="70" width="190" height="88"/>
+  <text x="855" y="104" text-anchor="middle" class="title">بدون كود</text>
+  <text x="855" y="131" text-anchor="middle" class="label">اختيار الحقول الخام</text>
+  <rect class="code" x="760" y="252" width="190" height="88"/>
+  <text x="855" y="286" text-anchor="middle" class="title">Code Node</text>
+  <text x="855" y="313" text-anchor="middle" class="label">وصف عربي + نصيحة</text>
+  <path class="line" d="M950 114 H982 V204 H1000"/>
+  <path class="line" d="M950 296 H982 V204"/>
+  <rect class="node" x="1008" y="158" width="160" height="92"/>
+  <text x="1088" y="193" text-anchor="middle" class="title">مقارنة</text>
+  <text x="1088" y="220" text-anchor="middle" class="label">نتيجة لكل مدينة</text>
+</svg>

@@ -1,0 +1,249 @@
+{
+  "name": "اليوم 20 - HTTP Request لأي API بدون node جاهز (No-code مقابل Code)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6201",
+      "name": "Start Demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"cities\": [\n    { \"name\": \"غزة\", \"latitude\": 31.5017, \"longitude\": 34.4668 },\n    { \"name\": \"رام الله\", \"latitude\": 31.9038, \"longitude\": 35.2038 },\n    { \"name\": \"نابلس\", \"latitude\": 32.2211, \"longitude\": 35.2544 },\n    { \"name\": \"الخليل\", \"latitude\": 31.5326, \"longitude\": 35.0998 }\n  ]\n}",
+        "options": {}
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6202",
+      "name": "City List",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "cities",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "cityData"
+        }
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6203",
+      "name": "Split Cities",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.open-meteo.com/v1/forecast?latitude=' + $json.cityData.latitude + '&longitude=' + $json.cityData.longitude + '&current=temperature_2m,wind_speed_10m,weather_code&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&forecast_hours=25&timezone=Asia%2FJerusalem' }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "outputPropertyName": "weather"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6204",
+      "name": "Fetch Forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nocode-city",
+              "name": "nocode_city",
+              "type": "string",
+              "value": "={{ $json.cityData.name }}"
+            },
+            {
+              "id": "nocode-temperature",
+              "name": "nocode_temperature_c",
+              "type": "number",
+              "value": "={{ $json.weather.current.temperature_2m }}"
+            },
+            {
+              "id": "nocode-wind",
+              "name": "nocode_wind_speed_kmh",
+              "type": "number",
+              "value": "={{ $json.weather.current.wind_speed_10m }}"
+            },
+            {
+              "id": "nocode-code",
+              "name": "nocode_weather_code",
+              "type": "number",
+              "value": "={{ $json.weather.current.weather_code }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6205",
+      "name": "Map Basic Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "includeOtherFields": true,
+      "position": [
+        912,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json;\nconst weather = input.weather;\nconst hourly = weather?.hourly;\nif (!input.cityData?.name || !weather?.current || !Array.isArray(hourly?.time) || !hourly.time.length) {\n  throw new Error('Open-Meteo response is missing current weather or hourly forecast data.');\n}\n\nconst requiredHourlyFields = ['temperature_2m', 'precipitation_probability', 'wind_speed_10m'];\nif (requiredHourlyFields.some((field) => !Array.isArray(hourly[field]) || hourly[field].length !== hourly.time.length)) {\n  throw new Error('Open-Meteo returned incomplete hourly forecast data.');\n}\n\nconst dateParts = new Intl.DateTimeFormat('en-GB', {\n  timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit',\n  hour: '2-digit', minute: '2-digit', hourCycle: 'h23'\n}).formatToParts(new Date()).reduce((result, part) => {\n  if (part.type !== 'literal') result[part.type] = part.value;\n  return result;\n}, {});\nconst currentLocalTime = `${dateParts.year}-${dateParts.month}-${dateParts.day}T${dateParts.hour}:${dateParts.minute}`;\nconst nextHours = hourly.time.map((time, index) => ({ time, index })).filter((hour) => hour.time > currentLocalTime).slice(0, 24);\nif (nextHours.length !== 24) {\n  throw new Error(`Expected 24 future hourly readings, received ${nextHours.length}.`);\n}\nconst temperatures = nextHours.map(({ index }) => Number(hourly.temperature_2m[index]));\nconst rain = nextHours.map(({ index }) => Number(hourly.precipitation_probability[index] ?? 0));\nif (temperatures.some((value) => !Number.isFinite(value)) || rain.some((value) => !Number.isFinite(value))) {\n  throw new Error('Open-Meteo returned invalid hourly temperature or precipitation data.');\n}\nconst maxTemp = Math.max(...temperatures);\nconst minTemp = Math.min(...temperatures);\nconst maxRain = Math.max(...rain);\nconst weatherCode = Number(weather.current.weather_code);\nconst weatherArabic = (code) => {\n  if (code === 0) return '????';\n  if (code === 1) return '?????? ????';\n  if (code === 2) return '???? ??????';\n  if (code === 3) return '????';\n  if (code === 45 || code === 48) return '????';\n  if ([51, 53, 55, 56, 57].includes(code)) return '????';\n  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return '???';\n  if ([71, 73, 75, 77, 85, 86].includes(code)) return '???';\n  if ([95, 96, 99].includes(code)) return '????? ?????';\n  return '??? ?????';\n};\n\nconst best = nextHours.reduce((choice, hour) => {\n  const temperature = Number(hourly.temperature_2m[hour.index]);\n  const precipitation = Number(hourly.precipitation_probability[hour.index] ?? 0);\n  const wind = Number(hourly.wind_speed_10m[hour.index] ?? 0);\n  const score = precipitation * 2 + Math.abs(temperature - 22) + Math.max(0, wind - 20) * 0.5;\n  return !choice || score < choice.score ? { ...hour, score } : choice;\n}, null);\nconst bestHour = best.time.slice(11, 16);\nlet recommendation;\nif (maxRain >= 50) recommendation = '?? ????? ?????? ????? ????? ???? ??????? ???????.';\nelse if (maxTemp >= 33) recommendation = '???? ?????? ??? ??????? ???? ????.';\nelse if (minTemp <= 12) recommendation = '???? ?????? ?????? ?? ??????? ???????.';\nelse recommendation = `????? ?????? ???? ??? ????? ${bestHour}.`;\n\nreturn { json: {\n  ...input,\n  code_city: input.cityData.name,\n  code_temperature_now_c: Number(weather.current.temperature_2m),\n  code_weather_ar: weatherArabic(weatherCode),\n  code_max_temperature_c: maxTemp,\n  code_min_temperature_c: minTemp,\n  code_max_rain_probability: maxRain,\n  code_best_hour: bestHour,\n  code_recommendation: recommendation\n} };"
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6206",
+      "name": "Interpret Weather (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6207",
+      "name": "Compare Both Methods",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1168,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: {\n  city: $json.nocode_city,\n  no_code: {\n    temperature_c: $json.nocode_temperature_c,\n    wind_speed_kmh: $json.nocode_wind_speed_kmh,\n    raw_weather_code: $json.nocode_weather_code\n  },\n  code: {\n    temperature_now_c: $json.code_temperature_now_c,\n    weather_ar: $json.code_weather_ar,\n    max_temperature_c: $json.code_max_temperature_c,\n    min_temperature_c: $json.code_min_temperature_c,\n    max_rain_probability_percent: $json.code_max_rain_probability,\n    best_hour: $json.code_best_hour,\n    recommendation: $json.code_recommendation\n  }\n} };"
+      },
+      "id": "5502c0f1-0ced-44fc-bb01-748a020d6208",
+      "name": "Comparison Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Start Demo": {
+      "main": [
+        [
+          {
+            "node": "City List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "City List": {
+      "main": [
+        [
+          {
+            "node": "Split Cities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Cities": {
+      "main": [
+        [
+          {
+            "node": "Fetch Forecast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Forecast": {
+      "main": [
+        [
+          {
+            "node": "Map Basic Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Interpret Weather (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Basic Fields": {
+      "main": [
+        [
+          {
+            "node": "Compare Both Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpret Weather (Code)": {
+      "main": [
+        [
+          {
+            "node": "Compare Both Methods",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compare Both Methods": {
+      "main": [
+        [
+          {
+            "node": "Comparison Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5502c0f1-0ced-44fc-bb01-748a020d6209",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

@@ -1,0 +1,529 @@
+{
+  "name": "اليوم 17 - تحويل JSON معقد إلى جدول بسيط (No-code مقابل Code)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "66629d02-9e8e-48bd-a573-4c15866f5254",
+      "name": "Start Demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"status\": \"ok\",\n  \"meta\": {\n    \"page\": 1,\n    \"total\": 3\n  },\n  \"data\": {\n    \"orders\": [\n      {\n        \"id\": \"ORD-1001\",\n        \"created_at\": \"2026-11-01T09:15:00Z\",\n        \"customer\": {\n          \"id\": \"C-01\",\n          \"name\": \"Ahmed Ali\",\n          \"contact\": {\n            \"email\": \"ahmed.ali@gmail.com\",\n            \"phone\": \"0599123456\"\n          }\n        },\n        \"shipping\": {\n          \"method\": \"express\",\n          \"address\": {\n            \"city\": \"Gaza\",\n            \"country\": \"PS\"\n          }\n        },\n        \"payment\": {\n          \"method\": \"card\",\n          \"status\": \"paid\"\n        },\n        \"items\": [\n          {\n            \"sku\": \"KB-01\",\n            \"name\": \"Mechanical Keyboard\",\n            \"qty\": 1,\n            \"price\": 85\n          },\n          {\n            \"sku\": \"MS-02\",\n            \"name\": \"Wireless Mouse\",\n            \"qty\": 2,\n            \"price\": 25\n          }\n        ]\n      },\n      {\n        \"id\": \"ORD-1002\",\n        \"created_at\": \"2026-11-02T14:40:00Z\",\n        \"customer\": {\n          \"id\": \"C-02\",\n          \"name\": \"Sara Khaled\",\n          \"contact\": {\n            \"email\": \"sara.k@outlook.com\"\n          }\n        },\n        \"shipping\": {\n          \"method\": \"pickup\"\n        },\n        \"payment\": {\n          \"method\": \"cash\",\n          \"status\": \"pending\"\n        },\n        \"items\": [\n          {\n            \"sku\": \"MN-27\",\n            \"name\": \"27in Monitor\",\n            \"qty\": 1,\n            \"price\": 240,\n            \"discount\": 20\n          }\n        ]\n      },\n      {\n        \"id\": \"ORD-1003\",\n        \"created_at\": \"2026-11-03T18:05:00Z\",\n        \"customer\": {\n          \"id\": \"C-03\",\n          \"name\": \"Omar Hassan\",\n          \"contact\": {\n            \"email\": \"omar@startup.io\",\n            \"phone\": \"0567111222\"\n          }\n        },\n        \"shipping\": {\n          \"method\": \"standard\",\n          \"address\": {\n            \"city\": \"Nablus\",\n            \"country\": \"PS\"\n          }\n        },\n        \"payment\": {\n          \"method\": \"card\",\n          \"status\": \"paid\"\n        },\n        \"items\": [\n          {\n            \"sku\": \"HD-01\",\n            \"name\": \"USB-C Hub\",\n            \"qty\": 1,\n            \"price\": 40\n          },\n          {\n            \"sku\": \"CB-03\",\n            \"name\": \"HDMI Cable\",\n            \"qty\": 3,\n            \"price\": 8\n          },\n          {\n            \"sku\": \"LS-05\",\n            \"name\": \"Laptop Stand\",\n            \"qty\": 1,\n            \"price\": 35,\n            \"discount\": 5\n          }\n        ]\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "7b1c6ed1-63e6-4286-8a46-2ef7f86801ec",
+      "name": "Sample API Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data.orders",
+        "options": {}
+      },
+      "id": "63b8a19e-c411-4403-9653-fd622880e554",
+      "name": "Split Orders",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "item"
+        }
+      },
+      "id": "59cbc41b-c478-4335-9cf2-ffdc260c0bb0",
+      "name": "Split Order Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "order_id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "c2",
+              "name": "order_date",
+              "type": "string",
+              "value": "={{ $json.created_at.split(\"T\")[0] }}"
+            },
+            {
+              "id": "c3",
+              "name": "customer_name",
+              "type": "string",
+              "value": "={{ $json.customer?.name ?? \"\" }}"
+            },
+            {
+              "id": "c4",
+              "name": "customer_email",
+              "type": "string",
+              "value": "={{ $json.customer?.contact?.email ?? \"\" }}"
+            },
+            {
+              "id": "c5",
+              "name": "customer_phone",
+              "type": "string",
+              "value": "={{ $json.customer?.contact?.phone ?? \"\" }}"
+            },
+            {
+              "id": "c6",
+              "name": "city",
+              "type": "string",
+              "value": "={{ $json.shipping?.address?.city ?? \"\" }}"
+            },
+            {
+              "id": "c7",
+              "name": "shipping_method",
+              "type": "string",
+              "value": "={{ $json.shipping?.method ?? \"\" }}"
+            },
+            {
+              "id": "c8",
+              "name": "payment_status",
+              "type": "string",
+              "value": "={{ $json.payment?.status ?? \"\" }}"
+            },
+            {
+              "id": "c9",
+              "name": "sku",
+              "type": "string",
+              "value": "={{ $json.item.sku }}"
+            },
+            {
+              "id": "c10",
+              "name": "product",
+              "type": "string",
+              "value": "={{ $json.item.name }}"
+            },
+            {
+              "id": "c11",
+              "name": "qty",
+              "type": "number",
+              "value": "={{ $json.item.qty }}"
+            },
+            {
+              "id": "c12",
+              "name": "unit_price",
+              "type": "number",
+              "value": "={{ $json.item.price }}"
+            },
+            {
+              "id": "c13",
+              "name": "line_total",
+              "type": "number",
+              "value": "={{ $json.item.qty * $json.item.price - ($json.item.discount ?? 0) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "16ca0603-578d-4104-a69b-0fdcde15fdc6",
+      "name": "Map Table Columns",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        944,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "f675f84c-179f-4602-ba90-daa882d54bf9",
+      "name": "Collect No-code Table",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "nocode_row_count",
+              "type": "number",
+              "value": "={{ $json.rows.length }}"
+            },
+            {
+              "id": "a2",
+              "name": "nocode_columns",
+              "type": "array",
+              "value": "={{ Object.keys($json.rows[0] || {}) }}"
+            },
+            {
+              "id": "a3",
+              "name": "nocode_table",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9444560-e294-4688-a2c8-dbefd7262195",
+      "name": "No-code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1392,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1574da9-caa7-43ac-b94a-ff5d461c42ee",
+      "name": "Combine Both Methods",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1024,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generic flattener: works on ANY nesting depth without naming fields one by one.\n// Nested objects become snake_case columns (customer.contact.email -> customer_contact_email).\n// Each element of the \"items\" array becomes its own row, with order fields repeated.\nconst flatten = (obj, prefix, out) => {\n  for (const [key, value] of Object.entries(obj || {})) {\n    const col = prefix ? prefix + '_' + key : key;\n    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {\n      flatten(value, col, out);\n    } else if (!Array.isArray(value)) {\n      out[col] = value;\n    }\n  }\n  return out;\n};\n\nconst rows = [];\nfor (const input of $input.all()) {\n  const orders = input.json.data?.orders || [];\n  for (const order of orders) {\n    const base = flatten(order, '', {});\n    const items = Array.isArray(order.items) && order.items.length ? order.items : [{}];\n    for (const item of items) {\n      const row = { ...base, ...flatten(item, 'item', {}) };\n      row.line_total = (Number(item.qty) || 0) * (Number(item.price) || 0) - (Number(item.discount) || 0);\n      rows.push(row);\n    }\n  }\n}\n\n// Same columns on every row: fill missing values with empty strings\nconst columns = [...new Set(rows.flatMap((r) => Object.keys(r)))];\nreturn rows.map((r) => {\n  const clean = {};\n  for (const c of columns) clean[c] = r[c] ?? '';\n  return { json: clean };\n});"
+      },
+      "id": "baf32569-7fd0-445c-a58a-818c85d61f51",
+      "name": "Flatten Any JSON (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "7f71ba5a-664c-427a-a52c-b51d27de64d9",
+      "name": "Collect Code Table",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        720,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "code_row_count",
+              "type": "number",
+              "value": "={{ $json.rows.length }}"
+            },
+            {
+              "id": "b2",
+              "name": "code_columns",
+              "type": "array",
+              "value": "={{ Object.keys($json.rows[0] || {}) }}"
+            },
+            {
+              "id": "b3",
+              "name": "code_table",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "06baa62f-0566-4b19-9b33-36b93a885498",
+      "name": "Code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        944,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "orders_in_json",
+              "type": "number",
+              "value": "={{ $(\"Sample API Response\").first().json.data.orders.length }}"
+            },
+            {
+              "id": "r2",
+              "name": "nocode_rows",
+              "type": "number",
+              "value": "={{ $json.nocode_row_count }}"
+            },
+            {
+              "id": "r3",
+              "name": "code_rows",
+              "type": "number",
+              "value": "={{ $json.code_row_count }}"
+            },
+            {
+              "id": "r4",
+              "name": "nocode_column_count",
+              "type": "number",
+              "value": "={{ $json.nocode_columns.length }}"
+            },
+            {
+              "id": "r5",
+              "name": "code_column_count",
+              "type": "number",
+              "value": "={{ $json.code_columns.length }}"
+            },
+            {
+              "id": "r7",
+              "name": "verdict",
+              "type": "string",
+              "value": "={{ $json.nocode_row_count === $json.code_row_count ? \"الطريقتان أعطتا \" + $json.code_row_count + \" صفوف. No-code أعطى \" + $json.nocode_columns.length + \" أعمدة اخترتها بنفسك بأسماء واضحة، والكود اكتشف \" + $json.code_columns.length + \" عمود تلقائياً دون أن تسمي أي حقل.\" : \"عدد الصفوف مختلف بين الطريقتين: راجع المصفوفات الفارغة.\" }}"
+            },
+            {
+              "id": "r8",
+              "name": "rule_of_thumb",
+              "type": "string",
+              "value": "No-code: عندما يكون شكل الـ JSON ثابتاً وتعرف الأعمدة التي تريدها. Code: عندما يتغير شكل البيانات أو يكون التداخل عميقاً، أو تظهر حقول جديدة مثل discount فجأة."
+            },
+            {
+              "id": "r9",
+              "name": "nocode_table",
+              "type": "array",
+              "value": "={{ $json.nocode_table }}"
+            },
+            {
+              "id": "r10",
+              "name": "code_table",
+              "type": "array",
+              "value": "={{ $json.code_table }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3828e023-0336-40d0-999b-c6d11447302e",
+      "name": "Comparison Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Demo": {
+      "main": [
+        [
+          {
+            "node": "Sample API Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample API Response": {
+      "main": [
+        [
+          {
+            "node": "Split Orders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Flatten Any JSON (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Orders": {
+      "main": [
+        [
+          {
+            "node": "Split Order Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Order Items": {
+      "main": [
+        [
+          {
+            "node": "Map Table Columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Table Columns": {
+      "main": [
+        [
+          {
+            "node": "Collect No-code Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect No-code Table": {
+      "main": [
+        [
+          {
+            "node": "No-code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No-code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Both Methods": {
+      "main": [
+        [
+          {
+            "node": "Comparison Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Any JSON (Code)": {
+      "main": [
+        [
+          {
+            "node": "Collect Code Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Code Table": {
+      "main": [
+        [
+          {
+            "node": "Code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a34efb02-8610-4aa0-9ca5-00d7ed398fae",
+  "meta": {
+    "instanceId": "78adac364530b856d593fdaf88ef9bb6bf9f0735fc378220302f911b3ce7373e"
+  },
+  "nodeGroups": [
+    {
+      "id": "d044dd56-7acf-4c8e-8f92-0fd83a2c60ba",
+      "name": "Flatten without code",
+      "nodeIds": [
+        "63b8a19e-c411-4403-9653-fd622880e554",
+        "59cbc41b-c478-4335-9cf2-ffdc260c0bb0",
+        "16ca0603-578d-4104-a69b-0fdcde15fdc6",
+        "f675f84c-179f-4602-ba90-daa882d54bf9",
+        "d9444560-e294-4688-a2c8-dbefd7262195"
+      ],
+      "description": "One row per product line, with hand-picked columns mapped from the nested order data"
+    },
+    {
+      "id": "c3c03a1b-f426-4108-b04b-d2aacd603c3b",
+      "name": "Flatten with code",
+      "nodeIds": [
+        "baf32569-7fd0-445c-a58a-818c85d61f51",
+        "7f71ba5a-664c-427a-a52c-b51d27de64d9",
+        "06baa62f-0566-4b19-9b33-36b93a885498"
+      ],
+      "description": "Discovers every nested field at any depth and turns it into a column automatically"
+    },
+    {
+      "id": "b836b70d-6f1f-46e9-adca-72d12233be0d",
+      "name": "Compare both methods",
+      "nodeIds": [
+        "a1574da9-caa7-43ac-b94a-ff5d461c42ee",
+        "3828e023-0336-40d0-999b-c6d11447302e"
+      ],
+      "description": "Row and column counts side by side, plus when each approach is the better pick"
+    }
+  ],
+  "id": "VErQt6AgZu34qZV8",
+  "tags": []
+}

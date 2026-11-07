@@ -1,0 +1,454 @@
+{
+  "name": "اليوم 18 - استخراج الأرقام والإيميلات بالـ Regex (No-code مقابل Code)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8be2f026-8c54-471f-98f2-f4a9deabd3b1",
+      "name": "Start Demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"messages\": [\n    {\n      \"id\": \"MSG-01\",\n      \"channel\": \"whatsapp\",\n      \"text\": \"مرحبا، أنا أحمد. تواصل معي على ahmed.ali@gmail.com أو واتساب 0599123456\"\n    },\n    {\n      \"id\": \"MSG-02\",\n      \"channel\": \"email\",\n      \"text\": \"Hi, please contact our sales team: sales@techstore.ps and support@techstore.ps, phone +970 59 876 5432\"\n    },\n    {\n      \"id\": \"MSG-03\",\n      \"channel\": \"facebook\",\n      \"text\": \"رقمي ٠٥٦٧١١١٢٢٢ والإيميل omar [at] startup [dot] io\"\n    },\n    {\n      \"id\": \"MSG-04\",\n      \"channel\": \"website\",\n      \"text\": \"Call me at 059-244-4555 or 00970595333444. Email: Lina.M@Yahoo.com\"\n    },\n    {\n      \"id\": \"MSG-05\",\n      \"channel\": \"whatsapp\",\n      \"text\": \"شكراً على الخدمة، لا أريد مشاركة بياناتي\"\n    },\n    {\n      \"id\": \"MSG-06\",\n      \"channel\": \"email\",\n      \"text\": \"My order ORD-1002 total 240 USD, send the invoice to mona.saleh@gmail.com\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "4942d907-4792-46bd-b8ab-376d2af37830",
+      "name": "Sample Customer Messages",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "messages",
+        "options": {}
+      },
+      "id": "548fe655-eb4c-47ef-bee2-1933e2fc0001",
+      "name": "Split Messages",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "message_id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "n2",
+              "name": "channel",
+              "type": "string",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "id": "n3",
+              "name": "email",
+              "type": "string",
+              "value": "={{ ($json.text.extractEmail() ?? \"\").toLowerCase() }}"
+            },
+            {
+              "id": "n4",
+              "name": "phone",
+              "type": "string",
+              "value": "لا توجد دالة جاهزة لاستخراج الهاتف"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30f643eb-2dfb-4879-9f6a-1a9cad1fd4ce",
+      "name": "Extract with Built-in Helpers",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "a3415877-fc34-40a8-a3ad-34ba01d92bc0",
+      "name": "Collect No-code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "nocode_emails_found",
+              "type": "number",
+              "value": "={{ $json.rows.filter(r => r.email).length }}"
+            },
+            {
+              "id": "a2",
+              "name": "nocode_phones_found",
+              "type": "number",
+              "value": 0
+            },
+            {
+              "id": "a3",
+              "name": "nocode_results",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a665425-def6-4327-93bc-bc7743d923f6",
+      "name": "No-code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "07a1053a-3e95-4174-9337-23e1796e58ec",
+      "name": "Combine Both Methods",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1504,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Regex extraction: ALL emails and ALL phones in every message.\n// Handles Arabic digits, \"name [at] domain [dot] com\" tricks, +970 / 00970 / 05x formats with spaces or dashes.\nconst toLatinDigits = (s) => s.replace(/[\\u0660-\\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660));\n\nconst EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g;\nconst PHONE_RE = /(?:\\+|00)?970[\\s-]?5\\d(?:[\\s-]?\\d){7}|05\\d(?:[\\s-]?\\d){7}/g;\n\nconst normalizePhone = (p) => {\n  let d = p.replace(/\\D/g, '');\n  if (d.startsWith('00')) d = d.slice(2);\n  if (d.startsWith('970')) d = '0' + d.slice(3);\n  return d;\n};\n\nreturn $input.all().map((item) => {\n  const text = toLatinDigits(String(item.json.text || ''))\n    .replace(/\\s*[\\[(]\\s*at\\s*[\\])]\\s*/gi, '@')\n    .replace(/\\s*[\\[(]\\s*dot\\s*[\\])]\\s*/gi, '.');\n\n  const emails = [...new Set((text.match(EMAIL_RE) || []).map((e) => e.toLowerCase()))];\n  const phones = [...new Set((text.match(PHONE_RE) || []).map(normalizePhone))];\n\n  return {\n    json: {\n      message_id: item.json.id,\n      channel: item.json.channel,\n      emails,\n      phones,\n      email_count: emails.length,\n      phone_count: phones.length,\n    },\n  };\n});"
+      },
+      "id": "4d850a0e-9c35-49f2-804e-b95a041a8577",
+      "name": "Regex Extract (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "72d9ce62-20f1-4b78-96ea-0ea4bcff90b4",
+      "name": "Collect Code Result",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "code_emails_found",
+              "type": "number",
+              "value": "={{ $json.rows.reduce((s, r) => s + r.email_count, 0) }}"
+            },
+            {
+              "id": "b2",
+              "name": "code_phones_found",
+              "type": "number",
+              "value": "={{ $json.rows.reduce((s, r) => s + r.phone_count, 0) }}"
+            },
+            {
+              "id": "b3",
+              "name": "code_results",
+              "type": "array",
+              "value": "={{ $json.rows }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f6c9b706-81f3-4955-944d-819adeaafeb0",
+      "name": "Code Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "messages_scanned",
+              "type": "number",
+              "value": "={{ $(\"Split Messages\").all().length }}"
+            },
+            {
+              "id": "r2",
+              "name": "nocode_emails_found",
+              "type": "number",
+              "value": "={{ $json.nocode_emails_found }}"
+            },
+            {
+              "id": "r3",
+              "name": "code_emails_found",
+              "type": "number",
+              "value": "={{ $json.code_emails_found }}"
+            },
+            {
+              "id": "r4",
+              "name": "nocode_phones_found",
+              "type": "number",
+              "value": "={{ $json.nocode_phones_found }}"
+            },
+            {
+              "id": "r5",
+              "name": "code_phones_found",
+              "type": "number",
+              "value": "={{ $json.code_phones_found }}"
+            },
+            {
+              "id": "r6",
+              "name": "verdict",
+              "type": "string",
+              "value": "={{ \"No-code استخرج \" + $json.nocode_emails_found + \" إيميل (أول إيميل فقط في كل رسالة) و0 أرقام هاتف. الـ Regex استخرج \" + $json.code_emails_found + \" إيميل و\" + $json.code_phones_found + \" رقم هاتف، بما فيها الأرقام العربية والإيميل المكتوب بـ [at] و[dot].\" }}"
+            },
+            {
+              "id": "r7",
+              "name": "rule_of_thumb",
+              "type": "string",
+              "value": "No-code: عندما تحتاج أول إيميل أو رابط فقط من نص نظيف، الدوال الجاهزة extractEmail و extractUrl تكفي. Code: عندما تحتاج كل التطابقات، أو أرقام هاتف بصيغ مختلفة، أو نصوص فوضوية فيها أرقام عربية وتمويه."
+            },
+            {
+              "id": "r8",
+              "name": "nocode_results",
+              "type": "array",
+              "value": "={{ $json.nocode_results }}"
+            },
+            {
+              "id": "r9",
+              "name": "code_results",
+              "type": "array",
+              "value": "={{ $json.code_results }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4e62c8db-7a43-4bf8-a8f2-a6d10e306a7f",
+      "name": "Comparison Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1728,
+        288
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Demo": {
+      "main": [
+        [
+          {
+            "node": "Sample Customer Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Customer Messages": {
+      "main": [
+        [
+          {
+            "node": "Split Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Messages": {
+      "main": [
+        [
+          {
+            "node": "Extract with Built-in Helpers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Regex Extract (Code)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract with Built-in Helpers": {
+      "main": [
+        [
+          {
+            "node": "Collect No-code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect No-code Result": {
+      "main": [
+        [
+          {
+            "node": "No-code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No-code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Both Methods": {
+      "main": [
+        [
+          {
+            "node": "Comparison Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regex Extract (Code)": {
+      "main": [
+        [
+          {
+            "node": "Collect Code Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Code Result": {
+      "main": [
+        [
+          {
+            "node": "Code Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Summary": {
+      "main": [
+        [
+          {
+            "node": "Combine Both Methods",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "02b2d07c-cb12-4b85-972b-8d35284521a4",
+  "meta": {
+    "instanceId": "78adac364530b856d593fdaf88ef9bb6bf9f0735fc378220302f911b3ce7373e"
+  },
+  "nodeGroups": [
+    {
+      "id": "80c0ead0-4174-495b-a9e1-07948605ec49",
+      "name": "Load customer messages",
+      "nodeIds": [
+        "4942d907-4792-46bd-b8ab-376d2af37830",
+        "548fe655-eb4c-47ef-bee2-1933e2fc0001"
+      ],
+      "description": "Six real-world messages mixing Arabic and English, odd phone formats, and hidden emails"
+    },
+    {
+      "id": "27039648-6d8e-459d-a873-c3c895ddbc79",
+      "name": "Extract without code",
+      "nodeIds": [
+        "30f643eb-2dfb-4879-9f6a-1a9cad1fd4ce",
+        "a3415877-fc34-40a8-a3ad-34ba01d92bc0",
+        "3a665425-def6-4327-93bc-bc7743d923f6"
+      ],
+      "description": "Uses ready-made helpers only: grabs the first email per message, no phone support"
+    },
+    {
+      "id": "b3e1717c-08f4-4688-a5bc-24afdf38706f",
+      "name": "Extract with code",
+      "nodeIds": [
+        "4d850a0e-9c35-49f2-804e-b95a041a8577",
+        "72d9ce62-20f1-4b78-96ea-0ea4bcff90b4",
+        "f6c9b706-81f3-4955-944d-819adeaafeb0"
+      ],
+      "description": "Finds every email and phone, normalizing Arabic digits, country codes, and [at]/[dot] tricks"
+    },
+    {
+      "id": "164d2eac-8b35-4024-90e5-e61c6058897f",
+      "name": "Compare both methods",
+      "nodeIds": [
+        "07a1053a-3e95-4174-9337-23e1796e58ec",
+        "4e62c8db-7a43-4bf8-a8f2-a6d10e306a7f"
+      ],
+      "description": "Counts found by each approach side by side, plus when each one is the better pick"
+    }
+  ],
+  "id": "R5bxXz3ZMkxzgRm2",
+  "tags": []
+}
