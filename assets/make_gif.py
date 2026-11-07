@@ -14,6 +14,7 @@ INTRO_SEC  = 2.2      # seconds for the intro screen
 
 TRANS_F = int(FPS * TRANS_SEC)
 INTRO_F = int(FPS * INTRO_SEC)
+HOLD_F = int(FPS * HOLD_SEC / 2)
 
 # brand palette  (dark bg + accent gradient per project)
 BG        = (11, 13, 23)
@@ -306,9 +307,10 @@ for f in range(INTRO_F):
 print("Rendering project cards...")
 frame_number = INTRO_F
 for idx in range(len(PROJECTS)):
-    frames.append(render_card_frame(idx, phase=frame_number / FPS))
-    durations.append(int(HOLD_SEC * 1000))
-    frame_number += 1
+    for _ in range(HOLD_F):
+        frames.append(render_card_frame(idx, phase=frame_number / FPS))
+        durations.append(int(2000 / FPS))
+        frame_number += 2
 
     # slide transition to next (except last)
     if idx < len(PROJECTS) - 1:
