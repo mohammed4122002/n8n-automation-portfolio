@@ -1,0 +1,658 @@
+{
+  "name": "Day 24 - Price Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "مراقب الأسعار - أضف منتج",
+        "formDescription": "ضع رابط المنتج والسعر الذي تريد الشراء عنده، وسنخبرك على تيليجرام عندما ينزل السعر.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Product name",
+              "placeholder": "مثال: سماعات Sony",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Product URL",
+              "placeholder": "https://...",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target price",
+              "fieldType": "number",
+              "placeholder": "السعر المستهدف",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "أضف للمراقبة",
+          "path": "day24-add-product",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "تمت إضافة المنتج للمراقبة ✅"
+            }
+          }
+        }
+      },
+      "id": "bec1f89a-46ce-42bc-8737-b3c981d2e4a1",
+      "name": "Add Product Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        48,
+        208
+      ],
+      "webhookId": "0b4e504f-6401-4113-84b6-79bbc2c1fbe0"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Ji8hCcKxXJsZeFQZ",
+          "cachedResultName": "price_watchlist"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product_name": "={{ $json[\"Product name\"] }}",
+            "product_url": "={{ $json[\"Product URL\"] }}",
+            "target_price": "={{ $json[\"Target price\"] }}",
+            "last_price": 0,
+            "lowest_price": 0
+          },
+          "schema": [
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_url",
+              "displayName": "product_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "target_price",
+              "displayName": "target_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_price",
+              "displayName": "last_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lowest_price",
+              "displayName": "lowest_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "65cc00d3-fce8-44a7-ac42-81b3cfa5fcfe",
+      "name": "Save Product",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "76044cbe-21b8-4389-a55a-19e1cd94b682",
+      "name": "Daily 9 AM Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        48,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Ji8hCcKxXJsZeFQZ",
+          "cachedResultName": "price_watchlist"
+        },
+        "returnAll": true
+      },
+      "id": "b4f14af2-c5a7-477b-b689-eb39ed0d9f05",
+      "name": "Get Watchlist",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.product_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (compatible; PriceMonitor/1.0)"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en,ar;q=0.9"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "91af4bda-c2f2-45aa-ada9-d75bd00907e7",
+      "name": "Fetch Product Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        496,
+        352
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pair each fetched page with its watchlist row and shrink the HTML to the parts that carry the price.\nconst rows = $('Get Watchlist').all();\nreturn $input.all().map((item, idx) => {\n  const row = rows[idx].json;\n  const html = String(item.json.data || '');\n  const ld = [...html.matchAll(/<script[^>]*ld\\+json[^>]*>([\\s\\S]*?)<\\/script>/gi)].map(m => m[1]).join(' ').slice(0, 3000);\n  const meta = [...html.matchAll(/<meta[^>]+price[^>]*>/gi)].map(m => m[0]).join(' ').slice(0, 1000);\n  const text = html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .slice(0, 5000);\n  return {\n    json: {\n      row_id: row.id,\n      product_name: row.product_name,\n      product_url: row.product_url,\n      target_price: Number(row.target_price) || 0,\n      previous_price: Number(row.last_price) || 0,\n      lowest_price: Number(row.lowest_price) || 0,\n      page_text: 'STRUCTURED DATA: ' + ld + '\\nMETA: ' + meta + '\\nPAGE TEXT: ' + text,\n    },\n  };\n});"
+      },
+      "id": "f16df336-282a-4802-91f8-2d5838eb77cf",
+      "name": "Prepare Page Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "GPT-5.4-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You extract the current selling price of the main product from web page content. Reply with ONLY the number: no currency symbol, no thousands separator, dot as decimal point. Prefer structured data over page text, and the current price over the old crossed-out price. If no price can be found, reply 0."
+            },
+            {
+              "content": "=Product: {{ $json.product_name }}\n\n{{ $json.page_text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 50
+        }
+      },
+      "id": "fc132dbb-60fe-4c99-ba5a-c606f5eaf166",
+      "name": "Extract Price With AI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        944,
+        352
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "row_id",
+              "type": "number",
+              "value": "={{ $(\"Prepare Page Text\").item.json.row_id }}"
+            },
+            {
+              "id": "a2",
+              "name": "product_name",
+              "type": "string",
+              "value": "={{ $(\"Prepare Page Text\").item.json.product_name }}"
+            },
+            {
+              "id": "a3",
+              "name": "product_url",
+              "type": "string",
+              "value": "={{ $(\"Prepare Page Text\").item.json.product_url }}"
+            },
+            {
+              "id": "a4",
+              "name": "target_price",
+              "type": "number",
+              "value": "={{ $(\"Prepare Page Text\").item.json.target_price }}"
+            },
+            {
+              "id": "a5",
+              "name": "previous_price",
+              "type": "number",
+              "value": "={{ $(\"Prepare Page Text\").item.json.previous_price }}"
+            },
+            {
+              "id": "a6",
+              "name": "new_price",
+              "type": "number",
+              "value": "={{ Number(String($json.output[0].content[0].text).replace(/[^0-9.]/g, \"\")) || 0 }}"
+            },
+            {
+              "id": "a7",
+              "name": "lowest_price",
+              "type": "number",
+              "value": "={{ (() => { const n = Number(String($json.output[0].content[0].text).replace(/[^0-9.]/g, \"\")) || 0; const l = $(\"Prepare Page Text\").item.json.lowest_price; return n > 0 ? (l > 0 ? Math.min(l, n) : n) : l; })() }}"
+            },
+            {
+              "id": "a8",
+              "name": "reason",
+              "type": "string",
+              "value": "={{ (() => { const n = Number(String($json.output[0].content[0].text).replace(/[^0-9.]/g, \"\")) || 0; const p = $(\"Prepare Page Text\").item.json.previous_price; const t = $(\"Prepare Page Text\").item.json.target_price; if (n <= 0) return \"\"; if (n <= t) return \"target\"; if (p > 0 && n < p) return \"drop\"; return \"\"; })() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9faa4c8-c1da-42b6-a091-1339aa6cc692",
+      "name": "Compare Prices",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "price-gt-0",
+              "leftValue": "={{ $json.new_price }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ee4ac835-b03d-4c00-8ec8-d275ccda4c4a",
+      "name": "Price Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Ji8hCcKxXJsZeFQZ",
+          "cachedResultName": "price_watchlist"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.row_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "last_price": "={{ $json.new_price }}",
+            "lowest_price": "={{ $json.lowest_price }}",
+            "last_checked": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "last_price",
+              "displayName": "last_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lowest_price",
+              "displayName": "lowest_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked",
+              "displayName": "last_checked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "96b78b63-c4fa-4568-b757-22f60ed0437a",
+      "name": "Update Price History",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-reason",
+              "leftValue": "={{ $(\"Compare Prices\").item.json.reason }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b659e6c7-2773-42d0-9443-17e5cd8242e6",
+      "name": "Worth Alerting",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1328,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "<__PLACEHOLDER_VALUE__Your Telegram chat ID__>",
+        "text": "={{ $(\"Compare Prices\").item.json.reason === \"target\" ? \"🎯 وصل للسعر المستهدف!\" : \"📉 نزل السعر!\" }}\n\nالمنتج: {{ $(\"Compare Prices\").item.json.product_name }}\nالسعر الآن: {{ $(\"Compare Prices\").item.json.new_price }}\nالسعر السابق: {{ $(\"Compare Prices\").item.json.previous_price || \"—\" }}\nالسعر المستهدف: {{ $(\"Compare Prices\").item.json.target_price }}\nأقل سعر سُجّل: {{ $(\"Compare Prices\").item.json.lowest_price }}\n\n{{ $(\"Compare Prices\").item.json.product_url }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": false
+        }
+      },
+      "id": "6fec4cef-4e6c-4685-90f3-4e0eff194685",
+      "name": "Send Price Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        352
+      ],
+      "webhookId": "2606d259-5024-483e-aa6e-03a437ac45ad"
+    },
+    {
+      "parameters": {
+        "content": "## 🏷️ Day 24: Price Monitor\nAdd products with the form (name, link, target price).\nEvery day at 9 AM the workflow opens each page, AI reads the price, logs the history, and sends a Telegram alert when the price drops or hits your target.",
+        "height": 528,
+        "width": 2752,
+        "color": 4
+      },
+      "id": "23f41165-b3a2-4573-9344-a9f5f4328d7b",
+      "name": "Sticky Note 23f41165",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ Setup\n1. Add a Telegram bot token (@BotFather)\n2. Put your chat ID in Send Price Alert\n3. Open the form, add a product\n4. Publish\nNote: pages that need JavaScript or login may not expose the price.",
+        "height": 528,
+        "width": 160,
+        "color": 5
+      },
+      "id": "bc93abb8-a459-4ea3-96fb-74a0685c87d1",
+      "name": "Sticky Note bc93abb8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        48
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Add Product Form": {
+      "main": [
+        [
+          {
+            "node": "Save Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 9 AM Check": {
+      "main": [
+        [
+          {
+            "node": "Get Watchlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Watchlist": {
+      "main": [
+        [
+          {
+            "node": "Fetch Product Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Product Page": {
+      "main": [
+        [
+          {
+            "node": "Prepare Page Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Page Text": {
+      "main": [
+        [
+          {
+            "node": "Extract Price With AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Price With AI": {
+      "main": [
+        [
+          {
+            "node": "Compare Prices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Prices": {
+      "main": [
+        [
+          {
+            "node": "Price Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Price Found": {
+      "main": [
+        [
+          {
+            "node": "Update Price History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Price History": {
+      "main": [
+        [
+          {
+            "node": "Worth Alerting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Worth Alerting": {
+      "main": [
+        [
+          {
+            "node": "Send Price Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b6a05bdf-e989-4acc-90fd-acbd8301f159",
+  "meta": {
+    "instanceId": "9c8fa1567f20bd7bd90c0902583782697020ceca6bfa08c581782134bdd9dc21"
+  },
+  "nodeGroups": [
+    {
+      "id": "9c0e9a58-5307-4c3f-a48b-624e52314338",
+      "name": "Read current prices",
+      "nodeIds": [
+        "b4f14af2-c5a7-477b-b689-eb39ed0d9f05",
+        "91af4bda-c2f2-45aa-ada9-d75bd00907e7",
+        "f16df336-282a-4802-91f8-2d5838eb77cf",
+        "fc132dbb-60fe-4c99-ba5a-c606f5eaf166",
+        "d9faa4c8-c1da-42b6-a091-1339aa6cc692"
+      ],
+      "description": "Loads the watchlist each morning, opens every product page and lets AI read the current price versus target and history"
+    },
+    {
+      "id": "81f18aec-0399-4ce6-babb-6401ed21aaa3",
+      "name": "Log price history",
+      "nodeIds": [
+        "ee4ac835-b03d-4c00-8ec8-d275ccda4c4a",
+        "96b78b63-c4fa-4568-b757-22f60ed0437a"
+      ],
+      "description": "Skips pages where no price was found, otherwise saves the latest and lowest price seen for each product"
+    },
+    {
+      "id": "f6e6d2e1-3ee1-4435-b264-2cfbe78e423c",
+      "name": "Alert on good deals",
+      "nodeIds": [
+        "b659e6c7-2773-42d0-9443-17e5cd8242e6",
+        "6fec4cef-4e6c-4685-90f3-4e0eff194685"
+      ],
+      "description": "Sends a Telegram message when the price drops since last check or reaches the target price"
+    }
+  ],
+  "id": "v7a1ehzAN9xjxGpj",
+  "tags": []
+}

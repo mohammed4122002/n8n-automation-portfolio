@@ -1,0 +1,516 @@
+{
+  "name": "Day 23 - Attendance Guardian",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "تسجيل الحضور والغياب",
+        "formDescription": "املأ النموذج لكل طالب. النظام يتابع الغياب ويتواصل مع ولي الأمر تلقائياً.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Student name",
+              "placeholder": "اسم الطالب",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Class name",
+              "placeholder": "مثال: English B2",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Parent Telegram chat ID",
+              "placeholder": "رقم محادثة ولي الأمر على تيليجرام",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Status",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "present"
+                  },
+                  {
+                    "option": "absent"
+                  },
+                  {
+                    "option": "late"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Date",
+              "fieldType": "date",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "تسجيل",
+          "path": "day23-attendance",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "تم تسجيل الحضور ✅"
+            }
+          }
+        }
+      },
+      "id": "d22b462c-060a-4a89-a332-11e0c5e20c10",
+      "name": "Mark Attendance Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -16,
+        192
+      ],
+      "webhookId": "7d390d9a-78e2-410b-9fd4-4cef819cc77a"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "dKJ34D3UNveSMuLs",
+          "cachedResultName": "attendance_log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "student_name": "={{ $json[\"Student name\"] }}",
+            "class_name": "={{ $json[\"Class name\"] }}",
+            "parent_chat_id": "={{ $json[\"Parent Telegram chat ID\"] }}",
+            "status": "={{ $json.Status }}",
+            "attendance_date": "={{ $json.Date }}"
+          },
+          "schema": [
+            {
+              "id": "student_name",
+              "displayName": "student_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "class_name",
+              "displayName": "class_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "parent_chat_id",
+              "displayName": "parent_chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attendance_date",
+              "displayName": "attendance_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6b77fb29-1da0-4944-8c6a-5f48098f07a8",
+      "name": "Save Attendance",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 16
+            }
+          ]
+        }
+      },
+      "id": "41f48ed1-768a-4269-8719-309b264adc88",
+      "name": "Daily 4 PM Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "dKJ34D3UNveSMuLs",
+          "cachedResultName": "attendance_log"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "absent"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "4cc23cf6-2518-4869-a204-04d2feef11d5",
+      "name": "Get Absence Records",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group the last 7 days of absences per student and place each one on the escalation ladder.\nconst rows = $input.all().map(i => i.json);\nconst today = $now.toFormat('yyyy-MM-dd');\nconst cutoff = $now.minus({ days: 7 }).toFormat('yyyy-MM-dd');\nconst students = {};\n\nfor (const r of rows) {\n  const d = String(r.attendance_date || '').slice(0, 10);\n  if (!r.student_name || !d || d < cutoff) continue;\n  const key = r.student_name + '|' + (r.parent_chat_id || '');\n  if (!students[key]) {\n    students[key] = {\n      student_name: r.student_name,\n      class_name: r.class_name,\n      parent_chat_id: String(r.parent_chat_id || ''),\n      dates: [],\n    };\n  }\n  if (!students[key].dates.includes(d)) students[key].dates.push(d);\n}\n\nreturn Object.values(students).map(s => {\n  const absences = s.dates.length;\n  let tier = 'gentle';\n  if (absences === 2) tier = 'concerned';\n  if (absences >= 3) tier = 'escalate';\n  return {\n    json: {\n      student_name: s.student_name,\n      class_name: s.class_name,\n      parent_chat_id: s.parent_chat_id,\n      absences,\n      absent_dates: s.dates.sort().join(', '),\n      absent_today: s.dates.includes(today),\n      tier,\n    },\n  };\n});"
+      },
+      "id": "d5f3811e-74fd-448f-bc89-6b7660bc2ac1",
+      "name": "Build Absence Ladder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "absent-today",
+              "leftValue": "={{ $json.absent_today }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5329ba5d-259c-43b9-9ebd-4fc61a494ad0",
+      "name": "Only Absent Today",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        736,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "GPT-5.4-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You write short Telegram messages from an education center to a student's parent, in Arabic (warm, respectful, simple). No Markdown symbols. Max 4 sentences. Never blame the child or the parent. Never invent reasons for the absence. Sign off as \"إدارة المركز\"."
+            },
+            {
+              "content": "=Student: {{ $json.student_name }}\nClass: {{ $json.class_name }}\nAbsences in the last 7 days: {{ $json.absences }} ({{ $json.absent_dates }})\nTone: {{ $json.tier === \"gentle\" ? \"Gentle: mention that the child was absent today, hope everything is fine, and invite the parent to tell us if help is needed.\" : ($json.tier === \"concerned\" ? \"Concerned: this is the second absence this week, mention what the child may miss, and ask if there is any difficulty we can help with.\" : \"Caring but serious: third or more absence, say we are worried, offer a quick call or a catch-up plan, and ask the parent to reply today.\") }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 400
+        }
+      },
+      "id": "e87646fd-0ccb-4787-8d03-ba7238017443",
+      "name": "Write Parent Message",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Only Absent Today\").item.json.parent_chat_id }}",
+        "text": "={{ $json.output[0].content[0].text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "77d657f1-8c76-4bad-b04b-6d57e6873f22",
+      "name": "Send To Parent",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        336
+      ],
+      "webhookId": "df5e89b0-49fe-4616-b8ad-68c15b86494d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tier-escalate",
+              "leftValue": "={{ $(\"Only Absent Today\").item.json.absences }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ac077526-3eea-4516-95e8-5cf216170271",
+      "name": "Third Absence Or More",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "<__PLACEHOLDER_VALUE__Center manager Telegram chat ID__>",
+        "text": "=🚨 تنبيه غياب متكرر\nالطالب: {{ $(\"Only Absent Today\").item.json.student_name }}\nالصف: {{ $(\"Only Absent Today\").item.json.class_name }}\nعدد الغيابات خلال 7 أيام: {{ $(\"Only Absent Today\").item.json.absences }}\nالتواريخ: {{ $(\"Only Absent Today\").item.json.absent_dates }}\nتم إرسال رسالة لولي الأمر. يُنصح بمتابعة هاتفية.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "b794a465-f9f7-4073-beb3-aee63c63b751",
+      "name": "Alert Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        336
+      ],
+      "webhookId": "07d099b5-e447-44fc-bb62-fe74459a7b64"
+    },
+    {
+      "parameters": {
+        "content": "## 🛡️ Day 23: Attendance Guardian\nTeachers log attendance with a form. Every day at 4 PM the system builds an escalation ladder:\n1 absence = gentle note, 2 = concerned note, 3+ = serious note and an alert to the manager.",
+        "height": 640,
+        "width": 2208,
+        "color": 4
+      },
+      "id": "faabcdd4-9bae-4b6b-8db1-7fcd5565c8bb",
+      "name": "Sticky Note faabcdd4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ Setup\n1. Add a Telegram bot token (from @BotFather)\n2. Put the manager chat ID in Alert Manager\n3. Parents must press Start on the bot once, then use their chat ID in the form\n4. Publish",
+        "height": 640,
+        "width": 160,
+        "color": 5
+      },
+      "id": "309d94f3-1fe1-41ae-9a1a-be3a5f425b0e",
+      "name": "Sticky Note 309d94f3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -48
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Mark Attendance Form": {
+      "main": [
+        [
+          {
+            "node": "Save Attendance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 4 PM Check": {
+      "main": [
+        [
+          {
+            "node": "Get Absence Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Absence Records": {
+      "main": [
+        [
+          {
+            "node": "Build Absence Ladder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Absence Ladder": {
+      "main": [
+        [
+          {
+            "node": "Only Absent Today",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Absent Today": {
+      "main": [
+        [
+          {
+            "node": "Write Parent Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Parent Message": {
+      "main": [
+        [
+          {
+            "node": "Send To Parent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Parent": {
+      "main": [
+        [
+          {
+            "node": "Third Absence Or More",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Third Absence Or More": {
+      "main": [
+        [
+          {
+            "node": "Alert Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "655f8100-1b7d-453d-8ee0-775729d7b0b5",
+  "meta": {
+    "instanceId": "9c8fa1567f20bd7bd90c0902583782697020ceca6bfa08c581782134bdd9dc21"
+  },
+  "nodeGroups": [
+    {
+      "id": "2dd02f16-efea-4f5a-a9f8-74e522e21f0c",
+      "name": "Find at-risk students",
+      "nodeIds": [
+        "4cc23cf6-2518-4869-a204-04d2feef11d5",
+        "d5f3811e-74fd-448f-bc89-6b7660bc2ac1",
+        "5329ba5d-259c-43b9-9ebd-4fc61a494ad0"
+      ],
+      "description": "Reads the last 7 days of absences each afternoon and keeps students who missed class today, ranked by severity"
+    },
+    {
+      "id": "2e5a7682-9cb5-4bd4-84c3-79d6a172bc36",
+      "name": "Contact the parent",
+      "nodeIds": [
+        "e87646fd-0ccb-4787-8d03-ba7238017443",
+        "77d657f1-8c76-4bad-b04b-6d57e6873f22"
+      ],
+      "description": "Writes a Telegram message in a tone matched to the absence count and sends it to the parent"
+    },
+    {
+      "id": "4318f2e7-e93a-4fdc-b17a-6167acbefb8c",
+      "name": "Escalate to manager",
+      "nodeIds": [
+        "ac077526-3eea-4516-95e8-5cf216170271",
+        "b794a465-f9f7-4073-beb3-aee63c63b751"
+      ],
+      "description": "On a third absence or more, alerts the center manager with the student details for a follow-up call"
+    }
+  ],
+  "id": "scBVE0OxzATueROk",
+  "tags": []
+}

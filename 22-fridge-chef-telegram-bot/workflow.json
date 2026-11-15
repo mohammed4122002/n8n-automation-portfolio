@@ -1,0 +1,255 @@
+{
+  "name": "Day 22 - Fridge Chef Telegram Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "f79a9589-5534-4dfa-9960-be0e4c4839ff",
+      "name": "Telegram Message",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        96
+      ],
+      "webhookId": "a7452ffd-aba4-47a0-80e2-30880792fb1a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-photo",
+              "leftValue": "={{ Array.isArray($json.message.photo) && $json.message.photo.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "69f4e6ea-7894-4e01-86c8-a12e80fc90c4",
+      "name": "Is Photo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+        "additionalFields": {}
+      },
+      "id": "c0cb3e8b-ea36-4e0b-bf8d-ee79dda53b25",
+      "name": "Download Fridge Photo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        0
+      ],
+      "webhookId": "13eb336d-501b-40be-9424-8fdfb4de2240"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "GPT-5.4-MINI"
+        },
+        "text": "You are \"Chef Fridge\", a friendly home-cooking assistant. Look at this photo of a fridge or pantry.\nReply in Arabic (simple, warm), in plain text without Markdown symbols, using exactly this structure:\n\n🧊 اللي لقيته عندك:\n(short comma-separated list of the ingredients you can clearly see)\n\n🍳 3 وصفات مقترحة:\n1) Name - cooking time - 2 short steps\n2) ...\n3) ...\nChoose recipes that need mostly what is already visible. Order them from easiest to hardest.\n\n🛒 ناقصك تشتري:\n(short bullet list of the few missing items, with the recipe number each one is for)\n\n💡 نصيحة: one short tip to avoid food waste, based on what looks like it will spoil first.\n\nIf the photo is not a fridge or food, politely say so in one sentence and ask for a fridge photo. Never invent ingredients you cannot see.",
+        "inputType": "base64",
+        "options": {
+          "detail": "high",
+          "maxTokens": 1200
+        }
+      },
+      "id": "77177cea-6e6d-4551-8df9-bfcbda81b766",
+      "name": "Analyze Fridge and Cook",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Telegram Message\").item.json.message.chat.id }}",
+        "text": "={{ $json.content ?? $json.output?.[0]?.content?.[0]?.text ?? \"ما قدرت أقرأ الصورة، جرّب صورة ثانية\" }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "f2d928b0-11f7-43bc-a307-8847f8e87a5d",
+      "name": "Send Recipes",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        0
+      ],
+      "webhookId": "f8a37e2b-c047-4650-ad22-5ff9f2b6ff56"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "أهلاً! أنا الشيف 👨‍🍳\nصوّر لي ثلاجتك (أو الخزانة) وابعتها، وأنا بطلّع لك 3 وصفات وقائمة بالناقص.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4f854754-ceab-4f49-b8bb-1c0a17fa0267",
+      "name": "Ask For Photo",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        192
+      ],
+      "webhookId": "4f289a37-f5bb-47d6-a535-b343163d5142"
+    },
+    {
+      "parameters": {
+        "content": "## 🧊 Day 22: Fridge Chef\nSend a photo of your fridge on Telegram. AI vision reads the ingredients, suggests 3 recipes, and lists what you need to buy.",
+        "height": 368,
+        "width": 160,
+        "color": 4
+      },
+      "id": "43a72fc0-ad58-46d1-b649-5d6dd088a2d5",
+      "name": "Sticky Note 43a72fc0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ Setup\n1. Create a bot with @BotFather and add the token as a Telegram credential\n2. Publish the workflow\n3. Send a fridge photo to your bot",
+        "height": 336,
+        "width": 160,
+        "color": 5
+      },
+      "id": "5648d49c-cd92-4e12-8d57-8f8c2af008bb",
+      "name": "Sticky Note 5648d49c",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 The brain\nThe prompt controls language, format and number of recipes. Edit it to add diets (vegan, keto) or a calorie limit.",
+        "height": 368,
+        "width": 160,
+        "color": 6
+      },
+      "id": "03e97589-9277-47b1-b678-e8255214222e",
+      "name": "Sticky Note 03e97589",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Is Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Photo": {
+      "main": [
+        [
+          {
+            "node": "Download Fridge Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask For Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Fridge Photo": {
+      "main": [
+        [
+          {
+            "node": "Analyze Fridge and Cook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Fridge and Cook": {
+      "main": [
+        [
+          {
+            "node": "Send Recipes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d1104cce-a923-40c9-a89f-0f67637a66ec",
+  "meta": {
+    "instanceId": "9c8fa1567f20bd7bd90c0902583782697020ceca6bfa08c581782134bdd9dc21"
+  },
+  "nodeGroups": [],
+  "id": "nZ2tl5caKudpHjth",
+  "tags": []
+}

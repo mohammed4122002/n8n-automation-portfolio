@@ -1,0 +1,224 @@
+{
+  "name": "Day 21 - Webhook Order Calculator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "day21-order-calculator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "389d4941-0193-4a7d-9567-5fd0ce943d26",
+      "name": "Receive Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        96
+      ],
+      "webhookId": "8f7e66db-600f-446a-91c2-d54abd4334bd"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid-input",
+              "leftValue": "={{ !!$json.body.customer && Array.isArray($json.body.items) && $json.body.items.length > 0 && $json.body.items.every(i => Number(i.price) >= 0 && Number(i.qty) > 0) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "94bd08fe-afa0-4d4c-b3f9-773775931185",
+      "name": "Is Input Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "subtotal",
+              "name": "subtotal",
+              "type": "number",
+              "value": "={{ Math.round($json.body.items.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0) * 100) / 100 }}"
+            },
+            {
+              "id": "discount",
+              "name": "discount",
+              "type": "number",
+              "value": "={{ String($json.body.coupon || \"\").toUpperCase() === \"SAVE10\" ? Math.round($json.body.items.reduce((s, i) => s + Number(i.price) * Number(i.qty), 0) * 10) / 100 : 0 }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "c559435b-aed5-48b8-a8df-319a9b6e580f",
+      "name": "Calculate Subtotal and Discount",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tax",
+              "name": "tax",
+              "type": "number",
+              "value": "={{ Math.round(($json.subtotal - $json.discount) * 14) / 100 }}"
+            },
+            {
+              "id": "total",
+              "name": "total",
+              "type": "number",
+              "value": "={{ Math.round(($json.subtotal - $json.discount + ($json.subtotal - $json.discount) * 0.14) * 100) / 100 }}"
+            },
+            {
+              "id": "processedAt",
+              "name": "processedAt",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "c8e18ff2-4547-40b3-95b0-48f41b07f717",
+      "name": "Calculate VAT and Total",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: \"success\", customer: $json.body.customer, itemsCount: $json.body.items.length, subtotal: $json.subtotal, discount: $json.discount, vat_14_percent: $json.tax, total: $json.total, processedAt: $json.processedAt } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "0e6bf780-8612-45ee-b205-1008f4a5c631",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": {
+          "status": "error",
+          "message": "Invalid payload. Required: customer (string) and items (non-empty array of {name, price >= 0, qty > 0}). Optional: coupon."
+        },
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "e460b0ea-e0cf-42ba-87bc-b65526a3af2d",
+      "name": "Respond Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        192
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Order": {
+      "main": [
+        [
+          {
+            "node": "Is Input Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Input Valid": {
+      "main": [
+        [
+          {
+            "node": "Calculate Subtotal and Discount",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Subtotal and Discount": {
+      "main": [
+        [
+          {
+            "node": "Calculate VAT and Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate VAT and Total": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e9da383e-bb45-45dd-97b5-c3977be56393",
+  "meta": {
+    "instanceId": "9c8fa1567f20bd7bd90c0902583782697020ceca6bfa08c581782134bdd9dc21"
+  },
+  "nodeGroups": [],
+  "id": "A90NKMbNHFFdcdJg",
+  "tags": []
+}
