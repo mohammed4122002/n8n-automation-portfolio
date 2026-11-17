@@ -6,12 +6,12 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-عشرون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء، جدولة المحتوى، فرز تذاكر الدعم، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، توليد أفكار المحتوى، استخراج الفواتير، بناء قاعدة معرفة داخلية، تقييم العملاء، تنظيف البيانات، ومعالجة وربط الخدمات — مع شرح وصور وطريقة استخدام لكل مشروع.
+سبعة وعشرون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء والأسعار والمنافسين، جدولة المحتوى، فرز التذاكر والسير الذاتية، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، تلخيص الروابط، واستخراج الفواتير — مع شرح وصور وطريقة استخدام لكل مشروع.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-20-24B89A?style=for-the-badge" alt="Twenty projects">
+  <img src="https://img.shields.io/badge/Projects-27-24B89A?style=for-the-badge" alt="Twenty-seven projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -46,6 +46,13 @@
 | **18** | **استخراج بيانات التواصل بـ Regex** | يلتقط الإيميلات والأرقام من رسائل متعددة الصيغ. | [شرح المشروع والصور ←](./18-regex-contact-extraction/README.md) |
 | **19** | **حساب العمولات المخصصة** | يقارن النسب الثابتة بمعادلة تشمل شرائح ومكافآت وخصومات وحدًا أعلى. | [شرح المشروع والصور ←](./19-javascript-commission-calculator/README.md) |
 | **20** | **ربط أي API عبر HTTP Request** | يجلب طقس أربع مدن ويقارن الحقول الجاهزة بتفسير البيانات بالكود. | [شرح المشروع والصور ←](./20-http-request-weather-api/README.md) |
+| **21** | **حاسبة الطلبات عبر Webhook** | يتحقق من الطلب ويحسب الخصم والضريبة ويرجع فاتورة فورية. | [شرح المشروع والصور ←](./21-webhook-order-calculator/README.md) |
+| **22** | **شيف الثلاجة عبر Telegram** | يحلل صورة المكونات ويقترح وصفات وقائمة تسوق. | [شرح المشروع والصور ←](./22-fridge-chef-telegram-bot/README.md) |
+| **23** | **حارس الحضور** | يتابع الغياب ويرسل إشعارًا مناسبًا لولي الأمر والإدارة. | [شرح المشروع والصور ←](./23-attendance-guardian/README.md) |
+| **24** | **مراقب الأسعار** | يتابع أسعار المنتجات ويرسل تنبيهًا عند الانخفاض أو بلوغ السعر المستهدف. | [شرح المشروع والصور ←](./24-price-monitor/README.md) |
+| **25** | **رادار المنافسين** | يكتشف التغييرات المهمة في مواقع المنافسين ويرسل تقريرًا يوميًا. | [شرح المشروع والصور ←](./25-competitor-radar/README.md) |
+| **26** | **مسؤول التوظيف الذكي** | يساعد على فرز السير الذاتية وترتيبها حسب متطلبات الوظيفة. | [شرح المشروع والصور ←](./26-ai-recruiter-cv-screening/README.md) |
+| **27** | **مكتبة المعرفة الذكية** | يلخص المقالات والفيديوهات ويحفظها للبحث لاحقًا. | [شرح المشروع والصور ←](./27-knowledge-digest/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -147,7 +154,14 @@
 ├── 17-nested-json-to-table/
 ├── 18-regex-contact-extraction/
 ├── 19-javascript-commission-calculator/
-└── 20-http-request-weather-api/
+├── 20-http-request-weather-api/
+├── 21-webhook-order-calculator/
+├── 22-fridge-chef-telegram-bot/
+├── 23-attendance-guardian/
+├── 24-price-monitor/
+├── 25-competitor-radar/
+├── 26-ai-recruiter-cv-screening/
+└── 27-knowledge-digest/
 ```
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.

@@ -1,0 +1,895 @@
+{
+  "name": "Competitor Radar — AI Change Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "b4db1d50-802d-427e-ab89-0bd6a49f86ee",
+      "name": "Every Day 8 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "IPHmBfzEGZqZEVjd",
+          "cachedResultName": "competitor_pages"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "isTrue"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "8adb86ea-407b-4447-aafb-38070b0becfb",
+      "name": "Get Active Pages",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.page_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (compatible; CompetitorMonitor/1.0)"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "ar,en;q=0.8"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "11d1e87d-81fa-4eb0-bc95-d2e17bd5929a",
+      "name": "Fetch Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "row_id",
+              "type": "number",
+              "value": "={{ $('Get Active Pages').item.json.id }}"
+            },
+            {
+              "id": "a2",
+              "name": "competitor_name",
+              "type": "string",
+              "value": "={{ $('Get Active Pages').item.json.competitor_name }}"
+            },
+            {
+              "id": "a3",
+              "name": "page_url",
+              "type": "string",
+              "value": "={{ $('Get Active Pages').item.json.page_url }}"
+            },
+            {
+              "id": "a4",
+              "name": "page_type",
+              "type": "string",
+              "value": "={{ $('Get Active Pages').item.json.page_type || 'general' }}"
+            },
+            {
+              "id": "a5",
+              "name": "previous_hash",
+              "type": "string",
+              "value": "={{ $('Get Active Pages').item.json.last_hash || '' }}"
+            },
+            {
+              "id": "a6",
+              "name": "previous_snapshot",
+              "type": "string",
+              "value": "={{ $('Get Active Pages').item.json.last_snapshot || '' }}"
+            },
+            {
+              "id": "a7",
+              "name": "fetch_ok",
+              "type": "boolean",
+              "value": "={{ !$json.error && typeof $json.data === \"string\" && $json.data.length > 0 }}"
+            },
+            {
+              "id": "a8",
+              "name": "error_message",
+              "type": "string",
+              "value": "={{ $json.error ? ($json.error.message || JSON.stringify($json.error)).slice(0, 500) : \"\" }}"
+            },
+            {
+              "id": "a9",
+              "name": "page_text",
+              "type": "string",
+              "value": "={{ (typeof $json.data === \"string\" ? $json.data : \"\").replace(/<script[\\s\\S]*?<\\/script>/gi, \" \").replace(/<style[\\s\\S]*?<\\/style>/gi, \" \").replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \" \").replace(/<[^>]+>/g, \" \").replace(/&nbsp;/g, \" \").replace(/&amp;/g, \"&\").replace(/\\s+/g, \" \").trim().slice(0, 12000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0351ecfe-4e13-448d-b0eb-4eef3d72d825",
+      "name": "Prepare Page Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.page_text }}",
+        "dataPropertyName": "page_hash"
+      },
+      "id": "58851142-b6ae-4a7a-9634-84745b46f437",
+      "name": "Fingerprint Page",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        960,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.fetch_ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0c837824-8b5a-4872-a1d1-3218face1368",
+      "name": "Fetched OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "IPHmBfzEGZqZEVjd",
+          "cachedResultName": "competitor_pages"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.row_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "last_hash": "={{ $json.page_hash }}",
+            "last_snapshot": "={{ $json.page_text }}",
+            "last_checked_at": "={{ $now.toISO() }}",
+            "last_error": ""
+          },
+          "schema": [
+            {
+              "id": "last_hash",
+              "displayName": "last_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_snapshot",
+              "displayName": "last_snapshot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked_at",
+              "displayName": "last_checked_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_error",
+              "displayName": "last_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "129accf7-ef3d-4a91-b14b-8c9c823aa028",
+      "name": "Save New Snapshot",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.previous_hash }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "leftValue": "={{ $json.page_hash }}",
+              "rightValue": "={{ $json.previous_hash }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed4d21ef-cfde-4b99-a5d5-3b66fbe9a044",
+      "name": "Keep Changed Pages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1520,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=المنافس: {{ $json.competitor_name }}\nنوع الصفحة: {{ $json.page_type }}\nالرابط: {{ $json.page_url }}\n\n=== النسخة السابقة ===\n{{ $json.previous_snapshot.slice(0, 6000) }}\n\n=== النسخة الحالية ===\n{{ $json.page_text.slice(0, 6000) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "أنت محلل ذكاء تنافسي. تقارن نسختين نصيتين من صفحة موقع منافس وتحدد ما تغيّر فعلًا.\n- تجاهل التغييرات الشكلية: التواريخ، العدادات، الإعلانات المتغيرة، رموز التتبع، ترتيب العناصر.\n- ركّز على: الأسعار، المنتجات أو الباقات الجديدة/المحذوفة، العروض والخصومات، الميزات، الرسائل التسويقية.\n- change_type واحدة من: price, product, promotion, feature, messaging, other.\n- importance واحدة من: high, medium, low.\n- إن لم يوجد تغيير ذو معنى ضع has_meaningful_change = false.\n- اكتب summary و recommendation بالعربية، مختصرة وعملية (جملة أو جملتان)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "4ef514d8-0de3-4138-bacb-2757dd8ebd4f",
+      "name": "Analyze Change with AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1856,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "4f741918-340f-4604-b14b-1c9c9908ee84",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1864,
+        440
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"has_meaningful_change\":true,\"change_type\":\"price\",\"importance\":\"high\",\"summary\":\"خفّض المنافس سعر الباقة الأساسية من 49$ إلى 39$ وأضاف تجربة مجانية 14 يومًا.\",\"recommendation\":\"راجع تسعير باقتك المماثلة وفكّر بعرض مضاد هذا الأسبوع.\"}"
+      },
+      "id": "19546371-1242-4995-90c1-719a1951ff0d",
+      "name": "Change Report Format",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1992,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "competitor_name",
+              "type": "string",
+              "value": "={{ $('Keep Changed Pages').item.json.competitor_name }}"
+            },
+            {
+              "id": "b2",
+              "name": "page_url",
+              "type": "string",
+              "value": "={{ $('Keep Changed Pages').item.json.page_url }}"
+            },
+            {
+              "id": "b3",
+              "name": "has_meaningful_change",
+              "type": "boolean",
+              "value": "={{ $json.output.has_meaningful_change }}"
+            },
+            {
+              "id": "b4",
+              "name": "change_type",
+              "type": "string",
+              "value": "={{ $json.output.change_type }}"
+            },
+            {
+              "id": "b5",
+              "name": "importance",
+              "type": "string",
+              "value": "={{ $json.output.importance }}"
+            },
+            {
+              "id": "b6",
+              "name": "summary",
+              "type": "string",
+              "value": "={{ $json.output.summary }}"
+            },
+            {
+              "id": "b7",
+              "name": "recommendation",
+              "type": "string",
+              "value": "={{ $json.output.recommendation }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0855cd10-9738-408f-aa69-93372a53048f",
+      "name": "Shape Change Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2208,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.has_meaningful_change }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cbdd9ce3-f812-4182-a146-245bd3ad1790",
+      "name": "Keep Meaningful Changes",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2544,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "zGMMwTKZvUgdanqE",
+          "cachedResultName": "competitor_changes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "competitor_name": "={{ $json.competitor_name }}",
+            "page_url": "={{ $json.page_url }}",
+            "change_type": "={{ $json.change_type }}",
+            "importance": "={{ $json.importance }}",
+            "summary": "={{ $json.summary }}",
+            "recommendation": "={{ $json.recommendation }}",
+            "detected_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "competitor_name",
+              "displayName": "competitor_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "page_url",
+              "displayName": "page_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "change_type",
+              "displayName": "change_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "importance",
+              "displayName": "importance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommendation",
+              "displayName": "recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detected_at",
+              "displayName": "detected_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3394664b-af2c-4054-9d47-8545d5f16d57",
+      "name": "Log Change",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2768,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "changes",
+        "options": {}
+      },
+      "id": "235f634c-1609-4f54-ac46-f1f2fa7f0182",
+      "name": "Collect All Changes",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=<b>🔎 رادار المنافسين — {{ $now.toFormat(\"yyyy-MM-dd\") }}</b>\nتم رصد {{ $json.changes.length }} تغيير مهم:\n\n{{ $json.changes.map((c, i) => { const esc = s => String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\"); const icon = c.importance === \"high\" ? \"🔴\" : (c.importance === \"medium\" ? \"🟠\" : \"🟢\"); return icon + \" <b>\" + esc(c.competitor_name) + \"</b> · \" + esc(c.change_type) + \"\\n\" + esc(c.summary) + \"\\n💡 \" + esc(c.recommendation) + \"\\n\" + esc(c.page_url); }).join(\"\\n\\n\") }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "c38dee46-7024-4ee6-a6f7-fc864260325b",
+      "name": "Send Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2992,
+        416
+      ],
+      "webhookId": "ee04055c-7e63-421f-a723-9d7f60ca434e",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "IPHmBfzEGZqZEVjd",
+          "cachedResultName": "competitor_pages"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.row_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "last_error": "={{ $json.error_message || \"Empty response\" }}",
+            "last_checked_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "last_error",
+              "displayName": "last_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked_at",
+              "displayName": "last_checked_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "848790c6-9f57-4921-b12d-987270ff6b7c",
+      "name": "Record Fetch Error",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        512
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Day 8 AM": {
+      "main": [
+        [
+          {
+            "node": "Get Active Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Pages": {
+      "main": [
+        [
+          {
+            "node": "Fetch Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Page": {
+      "main": [
+        [
+          {
+            "node": "Prepare Page Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Page Data": {
+      "main": [
+        [
+          {
+            "node": "Fingerprint Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fingerprint Page": {
+      "main": [
+        [
+          {
+            "node": "Fetched OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetched OK?": {
+      "main": [
+        [
+          {
+            "node": "Save New Snapshot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Keep Changed Pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Fetch Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Changed Pages": {
+      "main": [
+        [
+          {
+            "node": "Analyze Change with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Change with AI": {
+      "main": [
+        [
+          {
+            "node": "Shape Change Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Change with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Change Report Format": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Analyze Change with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape Change Record": {
+      "main": [
+        [
+          {
+            "node": "Keep Meaningful Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Meaningful Changes": {
+      "main": [
+        [
+          {
+            "node": "Log Change",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect All Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect All Changes": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "58947e54-0fe2-4f69-81dd-0e936907e5e4",
+  "meta": {
+    "instanceId": "52dd2ce77443d026c0684441415203d076ea0761b8a17061d7c1be5c00afc73e"
+  },
+  "nodeGroups": [
+    {
+      "id": "91eb2177-c209-4875-bfa9-e28492eda414",
+      "name": "Collect competitor pages",
+      "nodeIds": [
+        "8adb86ea-407b-4447-aafb-38070b0becfb",
+        "11d1e87d-81fa-4eb0-bc95-d2e17bd5929a",
+        "0351ecfe-4e13-448d-b0eb-4eef3d72d825",
+        "58851142-b6ae-4a7a-9634-84745b46f437"
+      ],
+      "description": "Reads the active pages list, downloads each page daily, cleans it to plain text and fingerprints it"
+    },
+    {
+      "id": "1d30eea4-239c-43e4-941b-9b8458882f76",
+      "name": "Detect page changes",
+      "nodeIds": [
+        "0c837824-8b5a-4872-a1d1-3218face1368",
+        "848790c6-9f57-4921-b12d-987270ff6b7c",
+        "129accf7-ef3d-4a91-b14b-8c9c823aa028",
+        "ed4d21ef-cfde-4b99-a5d5-3b66fbe9a044"
+      ],
+      "description": "Logs failed downloads, stores the newest snapshot, and passes on only pages that differ from last time"
+    },
+    {
+      "id": "936e8d34-71a4-4e8f-bed6-1735f9e63c25",
+      "name": "Understand what changed",
+      "nodeIds": [
+        "4ef514d8-0de3-4138-bacb-2757dd8ebd4f",
+        "4f741918-340f-4604-b14b-1c9c9908ee84",
+        "19546371-1242-4995-90c1-719a1951ff0d",
+        "0855cd10-9738-408f-aa69-93372a53048f"
+      ],
+      "description": "Compares old vs new text, ignores noise, and rates price, product or offer changes with an Arabic summary"
+    },
+    {
+      "id": "8687321e-b095-420d-8f19-28211543b8cd",
+      "name": "Report important changes",
+      "nodeIds": [
+        "cbdd9ce3-f812-4182-a146-245bd3ad1790",
+        "3394664b-af2c-4054-9d47-8545d5f16d57",
+        "235f634c-1609-4f54-ac46-f1f2fa7f0182",
+        "c38dee46-7024-4ee6-a6f7-fc864260325b"
+      ],
+      "description": "Keeps real changes, saves them to the history table and sends one daily alert with recommendations"
+    }
+  ],
+  "id": "oHo0JgPv9k4EPO25",
+  "tags": []
+}

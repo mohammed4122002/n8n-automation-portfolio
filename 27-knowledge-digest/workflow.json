@@ -1,0 +1,847 @@
+{
+  "name": "Knowledge Digest — AI Link Summarizer & Library",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "chatIds": "YOUR_TELEGRAM_CHAT_ID"
+        }
+      },
+      "id": "2f2d5f4a-652e-4872-b97f-efee2b6fffcc",
+      "name": "New Telegram Message",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        544
+      ],
+      "webhookId": "a72334e4-a531-447a-b17a-f71945fcb6c6",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ String($json.message.chat.id) }}"
+            },
+            {
+              "id": "a2",
+              "name": "text",
+              "type": "string",
+              "value": "={{ String($json.message.text || $json.message.caption || '').trim() }}"
+            },
+            {
+              "id": "a3",
+              "name": "url",
+              "type": "string",
+              "value": "={{ (String($json.message.text || $json.message.caption || '').match(/https?:\\/\\/\\S+/) || [''])[0] }}"
+            },
+            {
+              "id": "a4",
+              "name": "is_search",
+              "type": "boolean",
+              "value": "={{ /^(\\/search|ابحث|بحث)/i.test(String($json.message.text || '').trim()) }}"
+            },
+            {
+              "id": "a5",
+              "name": "search_term",
+              "type": "string",
+              "value": "={{ String($json.message.text || '').trim().replace(/^(\\/search|ابحث|بحث)\\s*/i, '').trim() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e3be5f31-f9e3-43ed-9bcb-4c7eeba70a84",
+      "name": "Read Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_search }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "search"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.url }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "rightValue": ""
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "link"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "help"
+        }
+      },
+      "id": "cd1d22c9-08b5-4635-894c-1fc88f451cd9",
+      "name": "Route Message",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        512,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VKreSKUuo22fr4k5",
+          "cachedResultName": "knowledge_library"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "title",
+              "condition": "ilike",
+              "keyValue": "={{ '%' + $json.search_term + '%' }}"
+            },
+            {
+              "keyName": "summary",
+              "condition": "ilike",
+              "keyValue": "={{ '%' + $json.search_term + '%' }}"
+            },
+            {
+              "keyName": "tags",
+              "condition": "ilike",
+              "keyValue": "={{ '%' + $json.search_term + '%' }}"
+            },
+            {
+              "keyName": "key_points",
+              "condition": "ilike",
+              "keyValue": "={{ '%' + $json.search_term + '%' }}"
+            }
+          ]
+        },
+        "limit": 5,
+        "orderBy": true,
+        "orderByColumn": "saved_at"
+      },
+      "id": "0849c76a-da7a-4818-9c10-6dfe81554a53",
+      "name": "Search Library",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        128
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst req = $('Read Message').first().json;\nconst rows = $input.all().map((i) => i.json).filter((r) => r && r.title);\nlet msg;\nif (!req.search_term) {\n  msg = 'اكتب كلمة بعد الأمر، مثال: ابحث تسويق';\n} else if (!rows.length) {\n  msg = 'لا توجد نتائج في مكتبتك لكلمة: <b>' + esc(req.search_term) + '</b>';\n} else {\n  msg = '<b>نتائج البحث عن: ' + esc(req.search_term) + '</b> (' + rows.length + ')\\n\\n';\n  msg += rows.map((r, n) => {\n    const s = String(r.summary || '');\n    return (n + 1) + '. <b>' + esc(r.title) + '</b>\\n' + esc(s.length > 220 ? s.slice(0, 220) + '...' : s) + '\\n' + esc(r.source_url);\n  }).join('\\n\\n');\n}\nif (msg.length > 4000) msg = msg.slice(0, 3990) + '...';\nreturn [{ json: { chat_id: req.chat_id, message: msg } }];"
+      },
+      "id": "7ebefb2f-ddca-4249-bcd4-2f4f6a346526",
+      "name": "Format Search Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "d54213ac-06fb-4fca-b988-6fddc459dd86",
+      "name": "Send Search Results",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        128
+      ],
+      "webhookId": "824372b7-9c97-4c34-97fc-d9b8c7358bf0",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "scrape",
+        "url": "={{ $json.url }}",
+        "scrapeOptions": {
+          "options": {
+            "formats": {
+              "format": [
+                {}
+              ]
+            },
+            "headers": {},
+            "timeout": 45000
+          }
+        },
+        "requestOptions": {}
+      },
+      "id": "bff041f9-1691-4c7f-9e06-4d93e6530a29",
+      "name": "Read Link Content",
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1,
+      "position": [
+        848,
+        576
+      ],
+      "credentials": {
+        "firecrawlApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Read Message').item.json.chat_id }}"
+            },
+            {
+              "id": "p2",
+              "name": "source_url",
+              "type": "string",
+              "value": "={{ $('Read Message').item.json.url }}"
+            },
+            {
+              "id": "p3",
+              "name": "source_type",
+              "type": "string",
+              "value": "={{ /youtube\\.com|youtu\\.be/i.test($('Read Message').item.json.url) ? 'youtube' : 'article' }}"
+            },
+            {
+              "id": "p4",
+              "name": "page_title",
+              "type": "string",
+              "value": "={{ ($json.data && $json.data.metadata && $json.data.metadata.title) || ($json.metadata && $json.metadata.title) || '' }}"
+            },
+            {
+              "id": "p5",
+              "name": "content",
+              "type": "string",
+              "value": "={{ String(($json.data && $json.data.markdown) || $json.markdown || '').slice(0, 40000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4aaf3464-b5c7-43c7-a393-1f8142373bee",
+      "name": "Prepare Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.content.length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 200
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a860ccfe-cb7d-4078-b23b-ec77284f71eb",
+      "name": "Has Readable Content?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=نوع المصدر: {{ $json.source_type }}\nالرابط: {{ $json.source_url }}\nعنوان الصفحة: {{ $json.page_title }}\n\nالمحتوى:\n\"\"\"\n{{ $json.content }}\n\"\"\"",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "أنت مساعد معرفة محترف. لخّص المحتوى المُرسل باللغة العربية الفصحى مهما كانت لغته الأصلية.\n- title: عنوان عربي مختصر وواضح.\n- language: رمز لغة المحتوى الأصلي (ar, en, ...).\n- summary: 3-5 جمل تغطي الفكرة الأساسية وقيمتها.\n- key_points: من 4 إلى 7 نقاط رئيسية قصيرة.\n- quotes: حتى 3 اقتباسات حرفية مهمة بلغتها الأصلية كما وردت في النص (لا تخترع اقتباسات؛ أرجع قائمة فارغة إن لم توجد).\n- tags: من 3 إلى 5 وسوم عربية قصيرة للبحث لاحقاً.\n- action_items: حتى 3 خطوات عملية مستفادة (أو قائمة فارغة).\nإذا كان المصدر فيديو يوتيوب ولم يتوفر إلا الوصف وليس النص الكامل، فاذكر ذلك صراحة في بداية الملخص. لا تضف معلومات غير موجودة في المحتوى."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "4af475f0-24ec-455e-9171-71fcc5cfc3ca",
+      "name": "Summarize with AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1632,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "8f8db440-8834-4e37-bb6e-efcd4d71a913",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1640,
+        488
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"title\":\"عنوان واضح ومختصر للمحتوى\",\"language\":\"en\",\"summary\":\"ملخص من 3 إلى 5 جمل يشرح الفكرة الرئيسية ولماذا تهم.\",\"key_points\":[\"النقطة الأولى\",\"النقطة الثانية\",\"النقطة الثالثة\"],\"quotes\":[\"اقتباس حرفي مهم من النص\"],\"tags\":[\"تسويق\",\"ذكاء اصطناعي\"],\"action_items\":[\"خطوة عملية يمكن تطبيقها\"]}"
+      },
+      "id": "c02ce1d9-3bcd-438e-bd78-c614a0218d44",
+      "name": "Summary Format",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1768,
+        488
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "VKreSKUuo22fr4k5",
+          "cachedResultName": "knowledge_library"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $json.output.title }}",
+            "source_url": "={{ $('Prepare Content').item.json.source_url }}",
+            "source_type": "={{ $('Prepare Content').item.json.source_type }}",
+            "language": "={{ $json.output.language }}",
+            "summary": "={{ $json.output.summary }}",
+            "key_points": "={{ ($json.output.key_points || []).join('\\n') }}",
+            "quotes": "={{ ($json.output.quotes || []).join('\\n') }}",
+            "tags": "={{ ($json.output.tags || []).join(', ') }}",
+            "action_items": "={{ ($json.output.action_items || []).join('\\n') }}",
+            "chat_id": "={{ $('Prepare Content').item.json.chat_id }}",
+            "saved_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_type",
+              "displayName": "source_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "key_points",
+              "displayName": "key_points",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quotes",
+              "displayName": "quotes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tags",
+              "displayName": "tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action_items",
+              "displayName": "action_items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "saved_at",
+              "displayName": "saved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b00f9ff9-abd4-4f00-bdbf-660fbf58065b",
+      "name": "Save to Library",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1984,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nreturn $input.all().map((item, i) => {\n  const o = item.json.output || {};\n  const src = $('Prepare Content').itemMatching(i).json;\n  const kind = src.source_type === 'youtube' ? 'فيديو يوتيوب' : 'مقال';\n  let msg = '<b>' + esc(o.title) + '</b>\\n<i>' + kind + '</i>\\n\\n';\n  msg += '<b>الملخص</b>\\n' + esc(o.summary) + '\\n\\n';\n  const points = o.key_points || [];\n  if (points.length) msg += '<b>أهم النقاط</b>\\n' + points.map((p) => '• ' + esc(p)).join('\\n') + '\\n\\n';\n  const quotes = o.quotes || [];\n  if (quotes.length) msg += '<b>اقتباسات</b>\\n' + quotes.map((q) => '« ' + esc(q) + ' »').join('\\n') + '\\n\\n';\n  const actions = o.action_items || [];\n  if (actions.length) msg += '<b>خطوات عملية</b>\\n' + actions.map((a) => '- ' + esc(a)).join('\\n') + '\\n\\n';\n  const tags = (o.tags || []).map((t) => '#' + esc(String(t).replace(/\\s+/g, '_'))).join(' ');\n  if (tags) msg += tags + '\\n\\n';\n  msg += 'تم الحفظ في مكتبتك. للبحث لاحقاً اكتب: ابحث كلمة';\n  if (msg.length > 4000) msg = msg.slice(0, 3990) + '...';\n  return { json: { chat_id: src.chat_id, message: msg } };\n});"
+      },
+      "id": "f5b3514a-73dc-4033-a121-cbe624681e15",
+      "name": "Format Summary Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "fcf319d2-47f6-481b-bcf2-c0380a55883e",
+      "name": "Send Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2208,
+        352
+      ],
+      "webhookId": "72028e04-a42b-4ca1-b550-4a907bafa4bb",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=تعذّر قراءة محتوى هذا الرابط:\n{{ $json.source_url }}\n\nقد تكون الصفحة محمية أو تتطلب تسجيل دخول، أو لا يتوفر نص كافٍ للتلخيص. جرّب رابطاً آخر.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "20003f89-be71-4c34-ad7c-1b64e5096db6",
+      "name": "Send Read Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        768
+      ],
+      "webhookId": "f4b32e1c-5146-4727-b3a4-0095520d063c",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "أهلاً! أنا مساعد مكتبة المعرفة.\n\n1) أرسل لي رابط مقال أو فيديو يوتيوب وسأرسل لك ملخصاً بالعربية مع أهم النقاط والاقتباسات، وأحفظه في مكتبتك.\n2) للبحث في مكتبتك اكتب: ابحث ثم الكلمة\nمثال: ابحث تسويق",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4376bd58-07dd-4d17-ae99-17d9d4cfe799",
+      "name": "Send Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        848
+      ],
+      "webhookId": "34ed2b27-e7f1-4232-a85a-e8499cc7f874",
+      "credentials": {
+        "telegramApi": {
+          "id": "4uUtgjpmMfS6ienk",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Read Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Message": {
+      "main": [
+        [
+          {
+            "node": "Route Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Message": {
+      "main": [
+        [
+          {
+            "node": "Search Library",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Link Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Library": {
+      "main": [
+        [
+          {
+            "node": "Format Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Search Results": {
+      "main": [
+        [
+          {
+            "node": "Send Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Link Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Content": {
+      "main": [
+        [
+          {
+            "node": "Has Readable Content?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Readable Content?": {
+      "main": [
+        [
+          {
+            "node": "Summarize with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Read Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize with AI": {
+      "main": [
+        [
+          {
+            "node": "Save to Library",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Summary Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary Format": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Summarize with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Summary Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "475f33b3-04e1-4bf0-b4a4-0a4482140485",
+  "meta": {
+    "instanceId": "52dd2ce77443d026c0684441415203d076ea0761b8a17061d7c1be5c00afc73e"
+  },
+  "nodeGroups": [
+    {
+      "id": "496b243f-ba69-4df2-a8c5-367f47d48578",
+      "name": "Understand the request",
+      "nodeIds": [
+        "e3be5f31-f9e3-43ed-9bcb-4c7eeba70a84",
+        "cd1d22c9-08b5-4635-894c-1fc88f451cd9"
+      ],
+      "description": "Pulls the link or search words out of each Telegram message and decides: summarize, search the library, or show help"
+    },
+    {
+      "id": "90c4fc53-507a-4b26-83dd-b0f2558d4d07",
+      "name": "Read the shared link",
+      "nodeIds": [
+        "bff041f9-1691-4c7f-9e06-4d93e6530a29",
+        "4aaf3464-b5c7-43c7-a393-1f8142373bee",
+        "a860ccfe-cb7d-4078-b23b-ec77284f71eb"
+      ],
+      "description": "Fetches the article or video page text; if nothing readable comes back, tells the user instead of guessing"
+    },
+    {
+      "id": "a3d5edd0-a34b-46e0-83a1-c11ec807e717",
+      "name": "Summarize and archive",
+      "nodeIds": [
+        "4af475f0-24ec-455e-9171-71fcc5cfc3ca",
+        "8f8db440-8834-4e37-bb6e-efcd4d71a913",
+        "c02ce1d9-3bcd-438e-bd78-c614a0218d44",
+        "b00f9ff9-abd4-4f00-bdbf-660fbf58065b",
+        "f5b3514a-73dc-4033-a121-cbe624681e15",
+        "fcf319d2-47f6-481b-bcf2-c0380a55883e"
+      ],
+      "description": "Writes an Arabic summary with key points, quotes and tags, stores it in the knowledge library, and replies in Telegram"
+    },
+    {
+      "id": "cab7f240-9aab-4596-93e7-d3d0ad987e9e",
+      "name": "Search the library",
+      "nodeIds": [
+        "0849c76a-da7a-4818-9c10-6dfe81554a53",
+        "7ebefb2f-ddca-4249-bcd4-2f4f6a346526",
+        "d54213ac-06fb-4fca-b988-6fddc459dd86"
+      ],
+      "description": "Finds the 5 most recent saved items matching the words in title, summary, tags or key points and sends them back"
+    }
+  ],
+  "id": "xtEFZXlqPI8TgD0e",
+  "tags": []
+}

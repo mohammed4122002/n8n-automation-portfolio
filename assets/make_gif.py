@@ -46,6 +46,13 @@ PROJECTS = [
     {"num": "18", "en": "Regex Contact Extraction",     "ar": "استخراج الأرقام والإيميلات",    "col": (168,85,247)},
     {"num": "19", "en": "JavaScript Commission",         "ar": "معادلة عمولة مخصصة",            "col": (16,185,129)},
     {"num": "20", "en": "HTTP Request → Any API",        "ar": "ربط API الطقس دون node جاهز",    "col": (59,130,246)},
+    {"num": "21", "en": "Webhook Order Calculator",      "ar": "حاسبة الطلبات عبر Webhook",      "col": (99,102,241)},
+    {"num": "22", "en": "Fridge Chef Telegram Bot",      "ar": "شيف الثلاجة عبر Telegram",       "col": (139,92,246)},
+    {"num": "23", "en": "Attendance Guardian",           "ar": "حارس الحضور",                     "col": (16,185,129)},
+    {"num": "24", "en": "Price Monitor",                 "ar": "مراقب الأسعار",                   "col": (245,158,11)},
+    {"num": "25", "en": "Competitor Radar",              "ar": "رادار المنافسين",                 "col": (59,130,246)},
+    {"num": "26", "en": "AI Recruiter CV Screening",     "ar": "مسؤول التوظيف الذكي",             "col": (14,165,233)},
+    {"num": "27", "en": "Knowledge Digest Library",      "ar": "مكتبة المعرفة الذكية",            "col": (168,85,247)},
 ]
 
 # ─── Font helpers ─────────────────────────────────────────────────────────────
@@ -135,7 +142,8 @@ def center_text(draw, text, font, y, col=WHITE, x_range=(0, W)):
     draw.text((cx - tw//2, y), display_text, font=font, fill=col)
 
 def draw_progress(draw, current, total, transition=0):
-    x0, y, segment_w, gap = 80, H - 20, 45, 8
+    x0, y, gap = 80, H - 20, 5
+    segment_w = (W - 2 * x0 - (total - 1) * gap) // total
     for index in range(total):
         x = x0 + index * (segment_w + gap)
         if index < current:
@@ -289,7 +297,7 @@ def render_intro_frame(t):
     badge_x, badge_y = 760, 366
     rounded_rect(draw, badge_x, badge_y, badge_x + 250, badge_y + 48, 16,
                  (22, 29, 49), outline=(54, 65, 93), outline_w=1)
-    draw.text((badge_x + 20, badge_y + 14), "20 WORKFLOWS", font=FONT_TAG, fill=WHITE)
+    draw.text((badge_x + 20, badge_y + 14), f"{len(PROJECTS)} WORKFLOWS", font=FONT_TAG, fill=WHITE)
     draw.ellipse([badge_x + 200, badge_y + 18, badge_x + 212, badge_y + 30], fill=(45, 212, 153))
     draw.text((80, H - 42), "EMAIL   ·   AI   ·   DATA   ·   API", font=FONT_MICRO, fill=(113, 128, 154))
     return img
