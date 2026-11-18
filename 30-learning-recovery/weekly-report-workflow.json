@@ -1,0 +1,255 @@
+{
+  "name": "استعادة التعلّم — التقرير الأسبوعي للمعلم",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                4
+              ],
+              "triggerAtHour": 15
+            }
+          ]
+        }
+      },
+      "id": "331f4802-b83d-4178-962d-3cbf45bbc8e3",
+      "name": "Every Thursday 15:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "PVfq64fDcw7A9MfV",
+          "cachedResultName": "rl_mastery"
+        },
+        "returnAll": true
+      },
+      "id": "8575dd7b-5a03-4ed4-a632-805f4da10b79",
+      "name": "Get All Mastery",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "8pGoVyRwIggy3G0I",
+          "cachedResultName": "rl_attempts"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "attempted_at",
+              "condition": "gte",
+              "keyValue": "={{ $now.minus({ days: 7 }).toISO() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "6e5fe68e-8920-42ec-a184-16772d003ccc",
+      "name": "Get Week Attempts",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "k8AB9uqSwgL8PKyI",
+          "cachedResultName": "rl_plans"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "week_start",
+              "keyValue": "={{ $now.startOf(\"week\").toISODate() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "21d5829c-376e-4e8c-b360-b86b78a5ef51",
+      "name": "Get Week Plans",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        0
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "EPdJw4TBJgsUpd6Y",
+          "cachedResultName": "rl_skill_map"
+        },
+        "returnAll": true,
+        "orderBy": true,
+        "orderByColumn": "level_order",
+        "orderByDirection": "ASC"
+      },
+      "id": "87c1e789-2220-437c-a81d-efb176a30fc3",
+      "name": "Get Skill Map",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const real = name => $(name).all().map(i => i.json).filter(r => Object.keys(r).length > 0);\nconst mastery = real('Get All Mastery');\nconst attempts = real('Get Week Attempts');\nconst plans = real('Get Week Plans');\nconst skills = real('Get Skill Map');\nconst skillName = code => { const s = skills.find(x => x.skill_code === code); return s ? s.skill_name : code; };\nconst skillOrder = code => { const s = skills.find(x => x.skill_code === code); return s ? Number(s.level_order) : 99; };\nconst labels = { mastered: 'متقن', learning: 'قيد التعلّم', gap: 'فجوة', needs_help: 'يحتاج تدخّل' };\nconst cell = 'style=\"border:1px solid #ccc;padding:4px 8px\"';\n\nconst groups = [...new Set(mastery.map(m => m.group_code || 'بدون مجموعة'))].sort();\nlet html = '<div dir=\"rtl\" style=\"font-family:Arial,sans-serif\">';\nhtml += '<h2>التقرير الأسبوعي — استعادة التعلّم</h2>';\nhtml += '<p>الأسبوع المنتهي في ' + $now.toFormat('yyyy-MM-dd') + '. يستخدم التقرير الرموز المستعارة فقط ومخصّص للمعلم المسؤول.</p>';\nhtml += '<p><b>محاولات هذا الأسبوع:</b> ' + attempts.length + ' — <b>الخطط:</b> ' + plans.filter(p => p.status === 'approved').length + ' معتمدة، ' + plans.filter(p => p.status === 'pending_review').length + ' بانتظار المراجعة، ' + plans.filter(p => p.status === 'needs_revision').length + ' تحتاج تعديل.</p>';\n\nfor (const g of groups) {\n  const rows = mastery.filter(m => (m.group_code || 'بدون مجموعة') === g);\n  const students = [...new Set(rows.map(r => r.student_code))];\n  const studentAttempts = attempts.filter(a => students.includes(a.student_code));\n  const avg = studentAttempts.length ? Math.round(studentAttempts.reduce((s, a) => s + Number(a.score || 0), 0) / studentAttempts.length) : null;\n  html += '<h3>المجموعة ' + g + ' (' + students.length + ' طلاب)</h3>';\n  html += '<p>محاولات هذا الأسبوع: ' + studentAttempts.length + (avg === null ? '' : ' — متوسط النتيجة: ' + avg + ' من 100') + '</p>';\n  const codes = [...new Set(rows.map(r => r.skill_code))].sort((a, b) => skillOrder(a) - skillOrder(b));\n  html += '<table style=\"border-collapse:collapse\"><tr><th ' + cell + '>المهارة</th><th ' + cell + '>متقن</th><th ' + cell + '>قيد التعلّم</th><th ' + cell + '>فجوة</th><th ' + cell + '>يحتاج تدخّل</th><th ' + cell + '>متوسط الإتقان</th></tr>';\n  for (const c of codes) {\n    const r = rows.filter(x => x.skill_code === c);\n    const count = st => r.filter(x => x.status === st).length;\n    const avgM = Math.round(r.reduce((s, x) => s + Number(x.mastery || 0), 0) / r.length);\n    html += '<tr><td ' + cell + '>' + skillName(c) + ' (' + c + ')</td><td ' + cell + '>' + count('mastered') + '</td><td ' + cell + '>' + count('learning') + '</td><td ' + cell + '>' + count('gap') + '</td><td ' + cell + '>' + count('needs_help') + '</td><td ' + cell + '>' + avgM + '</td></tr>';\n  }\n  html += '</table>';\n  const help = rows.filter(r => r.status === 'needs_help');\n  if (help.length) {\n    html += '<p><b>يحتاجون تدخّلًا:</b></p><ul>';\n    for (const h of help) html += '<li>' + h.student_code + ': ' + skillName(h.skill_code) + ' (إتقان ' + h.mastery + ')</li>';\n    html += '</ul>';\n  }\n  const commonGaps = codes.map(c => ({ c, n: rows.filter(x => x.skill_code === c && (x.status === 'gap' || x.status === 'needs_help')).length })).filter(x => x.n >= 2);\n  if (commonGaps.length) html += '<p><b>فجوات مشتركة تصلح لجلسة جماعية:</b> ' + commonGaps.map(x => skillName(x.c) + ' (' + x.n + ' طلاب)').join('، ') + '</p>';\n}\nif (!groups.length) html += '<p>لا توجد بيانات إتقان بعد.</p>';\nhtml += '<p style=\"color:#666\">الأرقام مساعدة للقرار التربوي ولا تحلّ محله.</p></div>';\nreturn [{ json: { subject: 'التقرير الأسبوعي لاستعادة التعلّم — ' + $now.toFormat('yyyy-MM-dd'), html, groups: groups.length, attempts: attempts.length } }];"
+      },
+      "id": "20b49a45-ca4a-426e-8ecc-06cbe6d8cb08",
+      "name": "Build Group Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_TEACHER_EMAIL",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "2759160e-4409-44e9-a569-80f246bee287",
+      "name": "Send Report to Teacher",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        0
+      ],
+      "webhookId": "470cac26-242f-4b64-b592-90db1053974d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iWetnCsCcprU0DPM",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Thursday 15:00": {
+      "main": [
+        [
+          {
+            "node": "Get All Mastery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Mastery": {
+      "main": [
+        [
+          {
+            "node": "Get Week Attempts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Week Attempts": {
+      "main": [
+        [
+          {
+            "node": "Get Week Plans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Week Plans": {
+      "main": [
+        [
+          {
+            "node": "Get Skill Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Skill Map": {
+      "main": [
+        [
+          {
+            "node": "Build Group Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Group Report": {
+      "main": [
+        [
+          {
+            "node": "Send Report to Teacher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Gaza"
+  },
+  "versionId": "2664761d-532f-4986-9354-4ef3f37cc7d2",
+  "meta": {
+    "instanceId": "800337e10e4aac83de707256cd691feaaf87d88ec13181d5f50491d29fb1e434"
+  },
+  "nodeGroups": [],
+  "id": "uU7UjQDrFgZEqstY",
+  "tags": []
+}

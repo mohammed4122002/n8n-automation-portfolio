@@ -53,6 +53,9 @@ PROJECTS = [
     {"num": "25", "en": "Competitor Radar",              "ar": "رادار المنافسين",                 "col": (59,130,246)},
     {"num": "26", "en": "AI Recruiter CV Screening",     "ar": "مسؤول التوظيف الذكي",             "col": (14,165,233)},
     {"num": "27", "en": "Knowledge Digest Library",      "ar": "مكتبة المعرفة الذكية",            "col": (168,85,247)},
+    {"num": "28", "en": "Revenue Rescue Engine",         "ar": "إنقاذ الصفقات المتوقفة",           "col": (99,102,241)},
+    {"num": "29", "en": "Predictive Inventory Tower",    "ar": "برج مراقبة المخزون",               "col": (20,184,166)},
+    {"num": "30", "en": "Learning Recovery System",      "ar": "استعادة التعلّم",                   "col": (245,158,11)},
 ]
 
 # ─── Font helpers ─────────────────────────────────────────────────────────────

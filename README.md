@@ -6,12 +6,20 @@
 
 ### أتمتة عملية، خطوة بخطوة
 
-سبعة وعشرون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد، إدارة العملاء، مراقبة الأخطاء والأسعار والمنافسين، جدولة المحتوى، فرز التذاكر والسير الذاتية، الترجمة بمصطلحاتك، تحويل الصوت إلى مهام، تلخيص الروابط، واستخراج الفواتير — مع شرح وصور وطريقة استخدام لكل مشروع.
+ثلاثون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد والعملاء، مراقبة الصفقات والمخزون، دعم التعلّم، وأتمتة مهام يومية متنوعة — مع شرح وصور وطريقة استخدام لكل مشروع.
+
+**استكشف الموقع المفهرس:** [مشاريع n8n بالعربية](https://mohammed4122002.github.io/n8n-automation-portfolio/) · [ملفات المشروع على GitHub](https://github.com/mohammed4122002/n8n-automation-portfolio)
+
+## الموقع والظهور في البحث
+
+- ينشئ GitHub Actions صفحة عربية مستقلة لكل مشروع، مع عنوان ووصف ورابط أساسي وبيانات مشاركة اجتماعية وبيانات منظمة لمحركات البحث.
+- عند النشر الأول، اختر **Settings → Pages → Build and deployment → GitHub Actions** في إعدادات المستودع، ثم شغّل إجراء **Deploy SEO site to GitHub Pages** من تبويب Actions.
+- بعد نجاح النشر، أرسل `https://mohammed4122002.github.io/n8n-automation-portfolio/sitemap.xml` إلى Google Search Console وBing Webmaster Tools لطلب فهرسة صفحات المشاريع. ظهور الصفحات يعتمد على محركات البحث وقد يستغرق وقتًا.
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-27-24B89A?style=for-the-badge" alt="Twenty-seven projects">
+  <img src="https://img.shields.io/badge/Projects-30-24B89A?style=for-the-badge" alt="Thirty projects">
 </p>
 
 <a href="#المشاريع">استكشف المشاريع</a> ·
@@ -53,6 +61,9 @@
 | **25** | **رادار المنافسين** | يكتشف التغييرات المهمة في مواقع المنافسين ويرسل تقريرًا يوميًا. | [شرح المشروع والصور ←](./25-competitor-radar/README.md) |
 | **26** | **مسؤول التوظيف الذكي** | يساعد على فرز السير الذاتية وترتيبها حسب متطلبات الوظيفة. | [شرح المشروع والصور ←](./26-ai-recruiter-cv-screening/README.md) |
 | **27** | **مكتبة المعرفة الذكية** | يلخص المقالات والفيديوهات ويحفظها للبحث لاحقًا. | [شرح المشروع والصور ←](./27-knowledge-digest/README.md) |
+| **28** | **محرك إنقاذ الصفقات** | يكتشف الصفقات المتوقفة ويرتبها ويجهز مسودة متابعة للمراجعة. | [شرح المشروع والصور ←](./28-revenue-rescue-engine/README.md) |
+| **29** | **برج مراقبة المخزون** | يتوقع النقص أو الركود ويقترح كميات إعادة الطلب دون شراء تلقائي. | [شرح المشروع والصور ←](./29-predictive-inventory-control/README.md) |
+| **30** | **استعادة التعلّم** | يحدد فجوات المهارات ويجهز مسارات تعلم يراجعها المعلم، مناسبًا للتعليم المنقطع. | [شرح المشروع والصور ←](./30-learning-recovery/README.md) |
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
@@ -106,6 +117,14 @@
   <tr>
     <td align="center"><strong>19 · حساب العمولات</strong><br><a href="./19-javascript-commission-calculator/README.md"><img src="./19-javascript-commission-calculator/screenshots/workflow-overview.png" alt="مخطط حساب العمولات ومقارنة النتائج في n8n" width="420"></a></td>
     <td align="center"><strong>20 · ربط API الطقس</strong><br><a href="./20-http-request-weather-api/README.md"><img src="./20-http-request-weather-api/screenshots/workflow-overview.svg" alt="مخطط ربط Open-Meteo عبر HTTP Request ومقارنة النتائج" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>28 · إنقاذ الصفقات</strong><br><a href="./28-revenue-rescue-engine/README.md"><img src="./28-revenue-rescue-engine/screenshots/workflow-overview.png" alt="مخطط متابعة الصفقات المتوقفة في n8n" width="420"></a></td>
+    <td align="center"><strong>29 · مراقبة المخزون</strong><br><a href="./29-predictive-inventory-control/README.md"><img src="./29-predictive-inventory-control/screenshots/workflow-overview.png" alt="مخطط توقع مخاطر المخزون في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>30 · استعادة التعلّم</strong><br><a href="./30-learning-recovery/README.md"><img src="./30-learning-recovery/screenshots/workflow-overview.png" alt="مخطط التقييم التشخيصي وخطة التعلّم في n8n" width="420"></a></td>
+    <td align="center"><strong>30 · تسجيل التمارين والتقرير الأسبوعي</strong><br><a href="./30-learning-recovery/README.md"><img src="./30-learning-recovery/screenshots/exercise-update.png" alt="مخطط تحديث إتقان الطالب بعد التمرين في n8n" width="420"></a></td>
   </tr>
 </table>
 
@@ -161,7 +180,10 @@
 ├── 24-price-monitor/
 ├── 25-competitor-radar/
 ├── 26-ai-recruiter-cv-screening/
-└── 27-knowledge-digest/
+├── 27-knowledge-digest/
+├── 28-revenue-rescue-engine/
+├── 29-predictive-inventory-control/
+└── 30-learning-recovery/
 ```
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.

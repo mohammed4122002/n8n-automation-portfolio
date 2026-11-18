@@ -1,0 +1,1004 @@
+{
+  "name": "29 - Predictive Inventory Control Tower",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "0ac017fd-9ac9-4602-abdf-ec8809634b21",
+      "name": "Daily Review 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "timezone",
+              "value": "Asia/Jerusalem",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "currency",
+              "value": "ILS",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "review_hour",
+              "value": "08:00",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "default_lead_time_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "c5",
+              "name": "safety_stock_days",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "c6",
+              "name": "history_days",
+              "value": 90,
+              "type": "number"
+            },
+            {
+              "id": "c7",
+              "name": "demand_weight_7d",
+              "value": 0.5,
+              "type": "number"
+            },
+            {
+              "id": "c8",
+              "name": "trend_change_threshold_pct",
+              "value": 25,
+              "type": "number"
+            },
+            {
+              "id": "c9",
+              "name": "high_risk_cover_vs_lead_multiplier",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "c10",
+              "name": "medium_risk_extra_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "c11",
+              "name": "overstock_days_of_stock",
+              "value": 120,
+              "type": "number"
+            },
+            {
+              "id": "c12",
+              "name": "overstock_risk_level",
+              "value": "medium",
+              "type": "string"
+            },
+            {
+              "id": "c13",
+              "name": "zero_demand_with_stock_risk_level",
+              "value": "medium",
+              "type": "string"
+            },
+            {
+              "id": "c14",
+              "name": "explanation_language",
+              "value": "Arabic",
+              "type": "string"
+            },
+            {
+              "id": "c15",
+              "name": "telegram_chat_id",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b0df919b-98f8-4fa7-b498-065756570d3a",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        432
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GXfoLp7xYQUQ0m1p",
+          "cachedResultName": "inventory"
+        },
+        "returnAll": true
+      },
+      "id": "e8864da0-3ed6-4267-8766-04099130d518",
+      "name": "Get Inventory",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        432
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegram_chat_id }}",
+        "text": "={{ (() => { const NL = String.fromCharCode(10); const esc = (v) => String(v ?? \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\"); const e = $json.error; const msg = typeof e === \"string\" ? e : ((e && e.message) || JSON.stringify(e || \"Unknown error\")); return [\"<b>Inventory Control Tower: data source read FAILED</b>\", \"Step: \" + esc($prevNode.name), \"Error: \" + esc(msg).slice(0, 1500), \"\", \"No recommendations were calculated, saved or sent in this run, to avoid decisions based on incomplete data.\", \"Execution: \" + $execution.id].join(NL); })() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "b5221278-72d4-492d-a5c8-a892f387de3e",
+      "name": "Send Read Error Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        528
+      ],
+      "executeOnce": true,
+      "webhookId": "4d4af482-1583-4265-bcb1-4d12e60250a9",
+      "credentials": {
+        "telegramApi": {
+          "id": "SwE6nHdZACl3GxE2",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "w0Zv5DgXB0190DJ7",
+          "cachedResultName": "sales_history"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sale_date",
+              "condition": "gte",
+              "keyValue": "={{ $now.setZone($(\"Config\").first().json.timezone).startOf(\"day\").minus({ days: $(\"Config\").first().json.history_days }).toISO() }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "a0d3100e-1411-4fec-83cc-c354697e33f6",
+      "name": "Get Sales History",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        368
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deterministic, explainable inventory math. The AI step never changes these numbers.\nconst cfg = $('Config').first().json;\nconst num = (v) => {\n  if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null;\n  const n = typeof v === 'number' ? v : Number(String(v).replace(/,/g, '').trim());\n  return Number.isFinite(n) ? n : null;\n};\nconst r2 = (n) => Math.round(n * 100) / 100;\nconst tz = cfg.timezone || 'Asia/Jerusalem';\nconst historyDays = num(cfg.history_days) || 90;\nconst defaultLead = num(cfg.default_lead_time_days) ?? 7;\nconst safetyDays = num(cfg.safety_stock_days) ?? 3;\nconst w7 = Math.min(1, Math.max(0, num(cfg.demand_weight_7d) ?? 0.5));\nconst trendPct = num(cfg.trend_change_threshold_pct) ?? 25;\nconst highMult = num(cfg.high_risk_cover_vs_lead_multiplier) ?? 1;\nconst mediumExtra = num(cfg.medium_risk_extra_days) ?? 7;\nconst overstockDays = num(cfg.overstock_days_of_stock) ?? 120;\nconst levels = ['high', 'medium', 'low'];\nconst overstockLevel = levels.includes(cfg.overstock_risk_level) ? cfg.overstock_risk_level : 'medium';\nconst zeroDemandLevel = levels.includes(cfg.zero_demand_with_stock_risk_level) ? cfg.zero_demand_with_stock_risk_level : 'medium';\n\nconst nowTz = DateTime.now().setZone(tz);\nconst today = nowTz.startOf('day');\nconst runId = String($execution.id) + '-' + nowTz.toFormat('yyyyLLdd-HHmm');\nconst skips = [];\nconst skip = (source, sku, ref, reason) => skips.push({ json: { kind: 'skip', run_id: runId, source_table: source, sku: String(sku || ''), row_ref: String(ref), reason } });\nconst isReal = (i) => i && i.json && Object.keys(i.json).length > 0;\n\nconst invItems = $('Get Inventory').all().filter(isReal);\nconst salesItems = $('Get Sales History').all().filter(isReal);\n\n// 1) Validate inventory rows (active products only, one row per sku)\nconst products = new Map();\ninvItems.forEach((it, idx) => {\n  const r = it.json;\n  const ref = r.id !== undefined ? 'row id ' + r.id : 'index ' + idx;\n  const active = r.active === true || String(r.active).toLowerCase() === 'true';\n  if (!active) return; // inactive products are out of scope by design\n  const sku = String(r.sku ?? '').trim();\n  if (!sku) return skip('inventory', '', ref, 'missing sku');\n  if (products.has(sku)) return skip('inventory', sku, ref, 'duplicate sku in inventory; only the first row is used');\n  const stock = num(r.current_stock);\n  if (stock === null) return skip('inventory', sku, ref, 'current_stock is missing or not a number');\n  if (stock < 0) return skip('inventory', sku, ref, 'current_stock is negative (' + stock + ')');\n  const target = num(r.target_stock);\n  if (target === null || target < 0) return skip('inventory', sku, ref, 'target_stock is missing, not a number or negative');\n  const notes = [];\n  let lead = num(r.lead_time_days);\n  let leadSource = 'inventory';\n  if (lead === null || lead <= 0) {\n    notes.push('lead_time_days missing or invalid in inventory (' + JSON.stringify(r.lead_time_days ?? null) + '); used declared default ' + defaultLead + ' days');\n    lead = defaultLead;\n    leadSource = 'config_default';\n  }\n  const sheetRopRaw = r.reorder_point;\n  const sheetRop = num(sheetRopRaw);\n  const hasSheetRop = sheetRop !== null && sheetRop >= 0;\n  if (sheetRopRaw !== null && sheetRopRaw !== undefined && sheetRopRaw !== '' && !hasSheetRop) notes.push('reorder_point in inventory is invalid and was ignored');\n  const unitCost = num(r.unit_cost);\n  if (unitCost === null || unitCost < 0) notes.push('unit_cost missing or invalid; order cost not estimated');\n  products.set(sku, {\n    sku,\n    product_name: String(r.product_name || '').trim() || sku,\n    supplier: String(r.supplier || '').trim(),\n    unit_cost: unitCost !== null && unitCost >= 0 ? unitCost : null,\n    current_stock: stock,\n    target_stock: target,\n    sheet_reorder_point: hasSheetRop ? sheetRop : null,\n    lead_time_days: lead,\n    lead_time_source: leadSource,\n    notes,\n    byAge: {},\n    oldestAge: 0,\n    salesRows: 0,\n    todayQty: 0,\n  });\n});\n\nif (products.size === 0) {\n  return [{ json: { kind: 'fatal', run_id: runId, message: 'No valid active products in inventory (' + invItems.length + ' rows read, ' + skips.length + ' rejected). No recommendations were produced.' } }].concat(skips);\n}\n\n// 2) Validate sales rows and bucket them by days-ago (in the configured timezone)\nconst unknownSkus = {};\nsalesItems.forEach((it, idx) => {\n  const r = it.json;\n  const ref = r.id !== undefined ? 'row id ' + r.id : 'index ' + idx;\n  const sku = String(r.sku ?? '').trim();\n  if (!sku) return skip('sales_history', '', ref, 'missing sku');\n  const qty = num(r.quantity_sold);\n  if (qty === null) return skip('sales_history', sku, ref, 'quantity_sold is missing or not a number');\n  if (qty < 0) return skip('sales_history', sku, ref, 'quantity_sold is negative (' + qty + ')');\n  if (r.sale_date === null || r.sale_date === undefined || r.sale_date === '') return skip('sales_history', sku, ref, 'sale_date is missing');\n  const js = new Date(r.sale_date);\n  if (isNaN(js.getTime())) return skip('sales_history', sku, ref, 'sale_date is not a valid date (' + String(r.sale_date) + ')');\n  const day = DateTime.fromJSDate(js).setZone(tz).startOf('day');\n  const age = Math.round(today.diff(day, 'days').days);\n  if (age < 0) return skip('sales_history', sku, ref, 'sale_date is in the future (' + day.toISODate() + ')');\n  if (age > historyDays) return; // outside the analysis window\n  const p = products.get(sku);\n  if (!p) { unknownSkus[sku] = (unknownSkus[sku] || 0) + 1; return; }\n  if (age === 0) { p.todayQty += qty; return; } // today is incomplete; excluded from averages\n  p.byAge[age] = (p.byAge[age] || 0) + qty;\n  p.oldestAge = Math.max(p.oldestAge, age);\n  p.salesRows += 1;\n});\nObject.keys(unknownSkus).forEach((sku) => skip('sales_history', sku, unknownSkus[sku] + ' row(s)', 'sku not found among valid active inventory products; sales ignored'));\n\n// 3) Forecast, reorder point, order quantity and risk per product\nconst sumAges = (byAge, from, to) => { let s = 0; for (let a = from; a <= to; a++) s += byAge[a] || 0; return s; };\nconst results = [];\nproducts.forEach((p) => {\n  const sum7 = sumAges(p.byAge, 1, 7);\n  const sum30 = sumAges(p.byAge, 1, 30);\n  const sumHist = sumAges(p.byAge, 1, historyDays);\n  const avg7 = sum7 / 7;\n  const avg30 = sum30 / 30;\n  const avgHist = sumHist / historyDays;\n  const avg = w7 * avg7 + (1 - w7) * avg30;\n  const notes = p.notes.slice();\n\n  if (p.salesRows === 0) notes.push('No valid sales records in the last ' + historyDays + ' days: demand treated as 0 (not estimated)');\n  else if (sum30 === 0) notes.push('No sales in the last 30 days (older sales exist, ' + historyDays + '-day avg ' + r2(avgHist) + '/day shown for context only)');\n  else if (p.oldestAge < 30) notes.push('Sales history covers only ' + p.oldestAge + ' day(s); the 30-day average may understate demand');\n  if (p.todayQty > 0) notes.push('Today\\'s partial sales (' + p.todayQty + ') excluded from averages');\n\n  let trend = 'stable';\n  let trendChange = null;\n  if (avg7 === 0 && avg30 === 0) trend = 'no_demand';\n  else if (avg30 === 0) trend = 'rising';\n  else {\n    trendChange = (avg7 / avg30 - 1) * 100;\n    if (trendChange >= trendPct) trend = 'rising';\n    else if (trendChange <= -trendPct) trend = 'falling';\n  }\n\n  const forecast7 = avg * 7;\n  const daysOfStock = avg > 0 ? p.current_stock / avg : null; // null = no demand, stock never runs out at current rate\n  const leadDemand = avg * p.lead_time_days;\n  const safetyUnits = avg * safetyDays;\n  const computedRop = leadDemand + safetyUnits;\n  const effectiveRop = Math.max(computedRop, p.sheet_reorder_point ?? 0);\n  const needsReorder = avg > 0 && p.current_stock <= effectiveRop;\n  const projectedAtArrival = Math.max(0, p.current_stock - leadDemand);\n  const qty = needsReorder ? Math.max(0, Math.ceil(p.target_stock - projectedAtArrival)) : 0;\n  if (avg === 0 && p.current_stock <= (p.sheet_reorder_point ?? -1)) notes.push('Stock is at/below the manual reorder_point but there is no recorded demand, so no quantity is suggested');\n\n  let level = 'low';\n  let type = 'none';\n  let rule = 'No rule triggered';\n  if (avg > 0) {\n    if (p.current_stock <= 0 || daysOfStock <= p.lead_time_days * highMult) {\n      level = 'high'; type = 'stockout';\n      rule = 'days_of_stock (' + r2(daysOfStock) + ') <= lead_time_days x ' + highMult + ' (' + r2(p.lead_time_days * highMult) + ')';\n    } else if (p.current_stock <= effectiveRop || daysOfStock <= p.lead_time_days + safetyDays + mediumExtra) {\n      level = 'medium'; type = 'stockout';\n      rule = 'current_stock (' + p.current_stock + ') <= reorder point (' + r2(effectiveRop) + ') or days_of_stock (' + r2(daysOfStock) + ') <= lead + safety + ' + mediumExtra + ' days (' + (p.lead_time_days + safetyDays + mediumExtra) + ')';\n    } else if (daysOfStock >= overstockDays) {\n      level = overstockLevel; type = 'overstock';\n      rule = 'days_of_stock (' + r2(daysOfStock) + ') >= overstock threshold (' + overstockDays + ')';\n    }\n  } else if (p.current_stock > 0) {\n    level = zeroDemandLevel; type = 'no_demand_overstock';\n    rule = 'zero demand with stock on hand (' + p.current_stock + ' units)';\n  } else {\n    type = 'no_demand';\n    rule = 'zero demand and zero stock';\n  }\n\n  const calc = [\n    'avg_7d=' + r2(sum7) + '/7=' + r2(avg7),\n    'avg_30d=' + r2(sum30) + '/30=' + r2(avg30),\n    'avg_daily_demand=' + w7 + 'xavg_7d+' + r2(1 - w7) + 'xavg_30d=' + r2(avg),\n    'trend=' + trend + (trendChange === null ? '' : ' (' + r2(trendChange) + '%)'),\n    'forecast_7d=' + r2(forecast7),\n    'days_of_stock=' + (daysOfStock === null ? 'n/a (zero demand)' : p.current_stock + '/' + r2(avg) + '=' + r2(daysOfStock)),\n    'reorder_point=' + r2(avg) + 'x' + p.lead_time_days + 'd lead + ' + r2(avg) + 'x' + safetyDays + 'd safety=' + r2(computedRop) + (p.sheet_reorder_point !== null ? ' (manual ' + p.sheet_reorder_point + ', effective ' + r2(effectiveRop) + ')' : ''),\n    'suggested_order_qty=' + (needsReorder ? 'ceil(target ' + p.target_stock + ' - projected stock at arrival ' + r2(projectedAtArrival) + ')=' + qty : '0 (stock above reorder point or no demand)'),\n    'risk=' + level + ': ' + rule,\n  ].join('; ');\n\n  results.push({\n    json: {\n      kind: 'product',\n      run_id: runId,\n      sku: p.sku,\n      product_name: p.product_name,\n      supplier: p.supplier,\n      currency: cfg.currency || 'ILS',\n      unit_cost: p.unit_cost,\n      current_stock: p.current_stock,\n      target_stock: p.target_stock,\n      manual_reorder_point: p.sheet_reorder_point,\n      lead_time_days: p.lead_time_days,\n      lead_time_source: p.lead_time_source,\n      safety_stock_days: safetyDays,\n      sales_rows_used: p.salesRows,\n      avg_7d: r2(avg7),\n      avg_30d: r2(avg30),\n      avg_daily_demand: r2(avg),\n      trend_change_pct: trendChange === null ? null : r2(trendChange),\n      demand_trend: trend,\n      forecast_7d: r2(forecast7),\n      days_of_stock: daysOfStock === null ? null : r2(daysOfStock),\n      lead_time_demand: r2(leadDemand),\n      safety_stock_units: r2(safetyUnits),\n      computed_reorder_point: r2(computedRop),\n      effective_reorder_point: r2(effectiveRop),\n      needs_reorder: needsReorder,\n      suggested_order_qty: qty,\n      estimated_order_cost: p.unit_cost !== null ? r2(qty * p.unit_cost) : null,\n      risk_level: level,\n      risk_type: type,\n      risk_rule: rule,\n      data_notes: notes,\n      calc_explanation: calc,\n    },\n  });\n});\n\nconst rank = { high: 0, medium: 1, low: 2 };\nresults.sort((a, b) => rank[a.json.risk_level] - rank[b.json.risk_level] || (a.json.days_of_stock ?? 1e9) - (b.json.days_of_stock ?? 1e9));\nreturn results.concat(skips);"
+      },
+      "id": "f4c1de32-2892-426f-abd6-59e890a563ac",
+      "name": "Compute Forecast",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "product"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "product"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "skip"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "skipped row"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.kind }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "fatal"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "data gap"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f8ae4d2-32ae-48b9-bdaf-6f2913346bbe",
+      "name": "Route Results",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1296,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Explain the inventory risk for this product. All numbers below were calculated by the system and are final.\n\nProduct facts (the ONLY source of truth):\n{{ JSON.stringify($json, null, 2) }}\n\nWrite every text field in: {{ $(\"Config\").first().json.explanation_language }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an inventory analyst who explains pre-calculated results to a purchasing manager.\nRules:\n- Do NOT calculate, estimate, round or change any number. If you mention a number, copy it exactly from the facts.\n- Never invent sales, lead times, suppliers, prices or dates. If data_notes mention defaults or missing data, say so in data_caveats.\n- risk_summary: 1-2 plain sentences on why the risk level is what it is (use risk_rule and demand_trend).\n- drivers: 2-4 short bullet points (demand trend, stock cover vs lead time, data gaps).\n- scenarios: 2-3 short what-if scenarios in words only (e.g. demand keeps rising, demand returns to the 30-day level, supplier is late) without new numbers.\n- review_note: what a human should check before approving the suggested quantity. Never say an order was placed or a supplier was contacted: nothing is ordered automatically.\n- data_caveats: data quality notes, or \"none\"."
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 5,
+          "delayBetweenBatches": 0
+        }
+      },
+      "id": "2e916890-ace9-4bc9-9f23-6f67366185f0",
+      "name": "Explain Risk",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1520,
+        128
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "2194d9e1-5897-401f-bc91-8ae92ea3c9f9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1528,
+        360
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"risk_summary\": { \"type\": \"string\" },\n    \"drivers\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"scenarios\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": { \"name\": { \"type\": \"string\" }, \"description\": { \"type\": \"string\" } },\n        \"required\": [\"name\", \"description\"]\n      }\n    },\n    \"review_note\": { \"type\": \"string\" },\n    \"data_caveats\": { \"type\": \"string\" }\n  },\n  \"required\": [\"risk_summary\", \"drivers\", \"scenarios\", \"review_note\", \"data_caveats\"]\n}"
+      },
+      "id": "71583aab-50ef-49dd-a7bc-eb2bbfcb9c6a",
+      "name": "Explanation Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1656,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Numbers always come from Compute Forecast. AI text is attached only as explanation.\nconst f = $('Route Results').item.json;\nlet ai = ($json && $json.output && typeof $json.output === 'object') ? $json.output : null;\nconst NL = String.fromCharCode(10);\nconst parts = ['[Calculation] ' + f.calc_explanation];\nif (f.data_notes && f.data_notes.length) parts.push('[Data notes] ' + f.data_notes.join(' | '));\n// Guard: discard AI text that mentions any number not present in the calculated facts\nif (ai) {\n  const numRe = /\\d+(?:\\.\\d+)?/g;\n  const allowed = new Set((JSON.stringify(f).match(numRe) || []).map((n) => String(Number(n))));\n  const aiNums = (JSON.stringify(ai).match(numRe) || []).map((n) => String(Number(n)));\n  const foreign = aiNums.filter((n) => !allowed.has(n));\n  if (foreign.length) {\n    parts.push('[AI guard] AI explanation discarded: it contained numbers not in the calculated facts (' + Array.from(new Set(foreign)).slice(0, 5).join(', ') + ')');\n    ai = null;\n  }\n}\nif (ai) {\n  parts.push('[AI explanation] ' + String(ai.risk_summary || ''));\n  if (Array.isArray(ai.drivers) && ai.drivers.length) parts.push('[Drivers] ' + ai.drivers.join(' | '));\n  if (Array.isArray(ai.scenarios) && ai.scenarios.length) parts.push('[Scenarios] ' + ai.scenarios.map((s) => String(s.name || '') + ': ' + String(s.description || '')).join(' | '));\n  if (ai.review_note) parts.push('[Review] ' + ai.review_note);\n  if (ai.data_caveats) parts.push('[Caveats] ' + ai.data_caveats);\n} else {\n  parts.push('[AI explanation] unavailable in this run; numbers above are deterministic and unaffected');\n}\nparts.push('[Approval] status=pending_approval. No purchase order was created and no supplier was contacted.');\nreturn {\n  json: {\n    run_id: f.run_id,\n    sku: f.sku,\n    product_name: f.product_name,\n    supplier: f.supplier,\n    currency: f.currency,\n    current_stock: f.current_stock,\n    target_stock: f.target_stock,\n    lead_time_days: f.lead_time_days,\n    lead_time_source: f.lead_time_source,\n    avg_7d: f.avg_7d,\n    avg_30d: f.avg_30d,\n    avg_daily_demand: f.avg_daily_demand,\n    demand_trend: f.demand_trend,\n    forecast_7d: f.forecast_7d,\n    days_of_stock: f.days_of_stock,\n    computed_reorder_point: f.computed_reorder_point,\n    effective_reorder_point: f.effective_reorder_point,\n    suggested_order_qty: f.suggested_order_qty,\n    estimated_order_cost: f.estimated_order_cost,\n    risk_level: f.risk_level,\n    risk_type: f.risk_type,\n    risk_rule: f.risk_rule,\n    ai_summary: ai ? String(ai.risk_summary || '') : '',\n    explanation: parts.join(NL).slice(0, 8000),\n    status: 'pending_approval',\n    created_at: DateTime.now().toISO(),\n  },\n};"
+      },
+      "id": "b1afbe34-eaf7-4fd8-a0ff-f3e846d5fe01",
+      "name": "Prepare Recommendation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "q9rYfpTEnHcr2I2g",
+          "cachedResultName": "inventory_recommendations"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.sku }}",
+            "product_name": "={{ $json.product_name }}",
+            "run_id": "={{ $json.run_id }}",
+            "current_stock": "={{ $json.current_stock }}",
+            "avg_7d": "={{ $json.avg_7d }}",
+            "avg_30d": "={{ $json.avg_30d }}",
+            "avg_daily_demand": "={{ $json.avg_daily_demand }}",
+            "demand_trend": "={{ $json.demand_trend }}",
+            "forecast_7d": "={{ $json.forecast_7d }}",
+            "days_of_stock": "={{ $json.days_of_stock }}",
+            "lead_time_days": "={{ $json.lead_time_days }}",
+            "computed_reorder_point": "={{ $json.computed_reorder_point }}",
+            "suggested_order_qty": "={{ $json.suggested_order_qty }}",
+            "risk_level": "={{ $json.risk_level }}",
+            "risk_type": "={{ $json.risk_type }}",
+            "explanation": "={{ $json.explanation }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}",
+            "currency": "={{ $json.currency }}",
+            "effective_reorder_point": "={{ $json.effective_reorder_point }}",
+            "estimated_order_cost": "={{ $json.estimated_order_cost }}",
+            "risk_rule": "={{ $json.risk_rule }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_stock",
+              "displayName": "current_stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avg_7d",
+              "displayName": "avg_7d",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avg_30d",
+              "displayName": "avg_30d",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avg_daily_demand",
+              "displayName": "avg_daily_demand",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "demand_trend",
+              "displayName": "demand_trend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "forecast_7d",
+              "displayName": "forecast_7d",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days_of_stock",
+              "displayName": "days_of_stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_time_days",
+              "displayName": "lead_time_days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "computed_reorder_point",
+              "displayName": "computed_reorder_point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "suggested_order_qty",
+              "displayName": "suggested_order_qty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_level",
+              "displayName": "risk_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_type",
+              "displayName": "risk_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "explanation",
+              "displayName": "explanation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "effective_reorder_point",
+              "displayName": "effective_reorder_point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estimated_order_cost",
+              "displayName": "estimated_order_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_rule",
+              "displayName": "risk_rule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cf502bd7-d9c8-4d1e-ac5b-f2bf18570332",
+      "name": "Save Recommendation",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2096,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One summary per run; each sku appears at most once.\nconst cfg = $('Config').first().json;\nconst NL = String.fromCharCode(10);\nconst esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst recs = $('Prepare Recommendation').all().map((i) => i.json);\nconst skipped = $('Compute Forecast').all().filter((i) => i.json.kind === 'skip').length;\nconst seen = new Set();\nconst flagged = [];\nfor (const r of recs) {\n  if (r.risk_level !== 'high' && r.risk_level !== 'medium') continue;\n  if (seen.has(r.sku)) continue;\n  seen.add(r.sku);\n  flagged.push(r);\n}\nconst rank = { high: 0, medium: 1 };\nflagged.sort((a, b) => rank[a.risk_level] - rank[b.risk_level] || (a.days_of_stock ?? 1e9) - (b.days_of_stock ?? 1e9));\nconst runId = recs.length ? recs[0].run_id : '';\nconst header = '<b>Inventory Control Tower</b> - ' + esc(DateTime.now().setZone(cfg.timezone).toFormat('yyyy-LL-dd HH:mm')) + NL\n  + 'Products analysed: ' + recs.length + ' | High: ' + flagged.filter((r) => r.risk_level === 'high').length + ' | Medium: ' + flagged.filter((r) => r.risk_level === 'medium').length + ' | Skipped rows: ' + skipped + NL\n  + 'All recommendations are <b>pending_approval</b>. No purchase order was created and no supplier was contacted.';\nconst blocks = flagged.map((r) => [\n  (r.risk_level === 'high' ? '<b>[HIGH]</b> ' : '<b>[MEDIUM]</b> ') + esc(r.product_name) + ' (' + esc(r.sku) + ') - ' + esc(r.risk_type),\n  'Stock: ' + r.current_stock + ' | Avg/day: ' + r.avg_daily_demand + ' (7d ' + r.avg_7d + ', 30d ' + r.avg_30d + ', ' + esc(r.demand_trend) + ')',\n  'Forecast 7d: ' + r.forecast_7d + ' | Days of stock: ' + (r.days_of_stock === null ? 'n/a (zero demand)' : r.days_of_stock),\n  'Lead time: ' + r.lead_time_days + 'd' + (r.lead_time_source === 'config_default' ? ' (default)' : '') + ' | Reorder point: ' + r.effective_reorder_point,\n  'Suggested qty: <b>' + r.suggested_order_qty + '</b>' + (r.estimated_order_cost !== null && r.suggested_order_qty > 0 ? ' (~' + r.estimated_order_cost + ' ' + esc(r.currency) + ')' : ''),\n  'Rule: ' + esc(r.risk_rule),\n  r.ai_summary ? 'Why: ' + esc(r.ai_summary).slice(0, 400) : '',\n].filter(Boolean).join(NL));\nif (blocks.length === 0) blocks.push('No high or medium risk products today.');\nconst messages = [];\nlet current = header;\nfor (const b of blocks) {\n  if ((current + NL + NL + b).length > 3800) { messages.push(current); current = b; }\n  else current = current + NL + NL + b;\n}\nmessages.push(current + NL + NL + 'Run: ' + esc(runId));\nreturn messages.map((text) => ({ json: { text } }));"
+      },
+      "id": "12dd891f-f122-499d-8cb8-2d8c6d4371cd",
+      "name": "Build Telegram Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegram_chat_id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "e35bf60b-b0a5-42c8-b425-bce9c0b348df",
+      "name": "Send Telegram Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2544,
+        240
+      ],
+      "webhookId": "5ecd28d4-674d-444c-b86b-4659286cc7c0",
+      "credentials": {
+        "telegramApi": {
+          "id": "SwE6nHdZACl3GxE2",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "0LFk9hnIrmJs7VkG",
+          "cachedResultName": "inventory_skipped_rows"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_id": "={{ $json.run_id }}",
+            "source_table": "={{ $json.source_table }}",
+            "sku": "={{ $json.sku }}",
+            "row_ref": "={{ $json.row_ref }}",
+            "reason": "={{ $json.reason }}",
+            "logged_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_table",
+              "displayName": "source_table",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_ref",
+              "displayName": "row_ref",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "logged_at",
+              "displayName": "logged_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0944463-5d4f-4ac6-b2b9-f5359fdf419f",
+      "name": "Log Skipped Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegram_chat_id }}",
+        "text": "={{ \"<b>Inventory Control Tower: no usable data</b>\" + String.fromCharCode(10) + String($json.message).replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\") + String.fromCharCode(10) + \"No recommendations were sent. Check the inventory table and inventory_skipped_rows (run \" + $json.run_id + \").\" }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "e6c2434d-7ae1-4f37-b514-cd55613ac1fb",
+      "name": "Send Data Gap Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        720
+      ],
+      "webhookId": "272a178e-8790-49b5-a635-8fbb2763b466",
+      "credentials": {
+        "telegramApi": {
+          "id": "SwE6nHdZACl3GxE2",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Review 08:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inventory": {
+      "main": [
+        [
+          {
+            "node": "Get Sales History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Read Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sales History": {
+      "main": [
+        [
+          {
+            "node": "Compute Forecast",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Read Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Forecast": {
+      "main": [
+        [
+          {
+            "node": "Route Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Results": {
+      "main": [
+        [
+          {
+            "node": "Explain Risk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Skipped Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Data Gap Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explain Risk": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Explain Risk",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explanation Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Explain Risk",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recommendation": {
+      "main": [
+        [
+          {
+            "node": "Save Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Recommendation": {
+      "main": [
+        [
+          {
+            "node": "Build Telegram Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Jerusalem"
+  },
+  "versionId": "bdb1a38b-d858-4d3c-955f-064c13924271",
+  "meta": {
+    "instanceId": "29b09ffd0ba3be17a6f2882ef77c89d2c876f941fc888664859c63bc663f7dd2"
+  },
+  "nodeGroups": [
+    {
+      "id": "0fef0114-f203-4337-aea6-3810416aba2f",
+      "name": "Forecast stock risk",
+      "nodeIds": [
+        "b0df919b-98f8-4fa7-b498-065756570d3a",
+        "e8864da0-3ed6-4267-8766-04099130d518",
+        "a0d3100e-1411-4fec-83cc-c354697e33f6",
+        "b5221278-72d4-492d-a5c8-a892f387de3e",
+        "f4c1de32-2892-426f-abd6-59e890a563ac"
+      ],
+      "description": "Reads active products and 90 days of sales (failed read = alert, stop), then computes demand, cover, reorder qty and risk"
+    },
+    {
+      "id": "7635fdfb-8eb9-47ec-b1b9-e7ecd7225f65",
+      "name": "Explain and report",
+      "nodeIds": [
+        "9f8ae4d2-32ae-48b9-bdaf-6f2913346bbe",
+        "f0944463-5d4f-4ac6-b2b9-f5359fdf419f",
+        "e6c2434d-7ae1-4f37-b514-cd55613ac1fb",
+        "2e916890-ace9-4bc9-9f23-6f67366185f0",
+        "2194d9e1-5897-401f-bc91-8ae92ea3c9f9",
+        "71583aab-50ef-49dd-a7bc-eb2bbfcb9c6a",
+        "b1afbe34-eaf7-4fd8-a0ff-f3e846d5fe01",
+        "cf502bd7-d9c8-4d1e-ac5b-f2bf18570332",
+        "12dd891f-f122-499d-8cb8-2d8c6d4371cd",
+        "e35bf60b-b0a5-42c8-b425-bce9c0b348df"
+      ],
+      "description": "Logs rejected rows, AI explains results in words only, saves them as pending approval and sends one Telegram digest"
+    }
+  ],
+  "id": "zrwOiIxN1C6EOacm",
+  "tags": []
+}

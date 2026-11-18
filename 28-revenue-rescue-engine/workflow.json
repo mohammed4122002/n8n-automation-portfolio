@@ -1,0 +1,1121 @@
+{
+  "name": "28 - Revenue Rescue Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "revenue-rescue-deal-update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6ac93756-8046-45a7-a08b-7dfcf6b0b427",
+      "name": "Deal Update Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        224
+      ],
+      "webhookId": "f4a2afe5-4b63-476d-bbba-3b2b1eba516c"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = ($json.body && typeof $json.body === 'object') ? $json.body : {};\nconst errors = [];\nconst str = (v) => (v === undefined || v === null) ? '' : String(v).trim();\n\n// Remove anything that looks like payment data or secrets from free text\nconst scrub = (text) => str(text)\n  .replace(/\\b\\d(?:[ -]?\\d){12,18}\\b/g, '[REDACTED_CARD]')\n  .replace(/\\b[A-Z]{2}\\d{2}[A-Z0-9]{11,30}\\b/g, '[REDACTED_IBAN]')\n  .replace(/\\b(cvv|cvc|cvv2)\\s*[:=]?\\s*\\d{3,4}\\b/gi, '$1: [REDACTED]')\n  .replace(/\\b(password|passwd|pwd|api[_-]?key|token|secret)\\s*[:=]\\s*\\S+/gi, '$1: [REDACTED]')\n  .slice(0, 2000);\n\nconst dealId = str(body.deal_id);\nconst customerName = str(body.customer_name);\nconst customerEmail = str(body.customer_email).toLowerCase();\nconst stage = str(body.stage).toLowerCase().replace(/\\s+/g, '_');\nconst currency = (str(body.currency) || 'ILS').toUpperCase();\n\nif (!dealId) errors.push('deal_id is required');\nelse if (dealId.length > 100 || !/^[A-Za-z0-9_.:-]+$/.test(dealId)) errors.push('deal_id must be up to 100 chars: letters, digits, _ . : -');\nif (!customerName) errors.push('customer_name is required');\nif (!customerEmail) errors.push('customer_email is required');\nelse if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(customerEmail)) errors.push('customer_email is not a valid email');\nif (!stage) errors.push('stage is required');\nif (!/^[A-Z]{3}$/.test(currency)) errors.push('currency must be a 3-letter code such as ILS');\n\nlet amount = null;\nif (body.amount === undefined || body.amount === null || body.amount === '') {\n  errors.push('amount is required');\n} else {\n  amount = typeof body.amount === 'number' ? body.amount : Number(String(body.amount).replace(/,/g, ''));\n  if (!Number.isFinite(amount)) errors.push('amount must be a number');\n  else if (amount < 0) errors.push('amount must be >= 0');\n}\n\nlet lastActivityIso = null;\nconst rawDate = str(body.last_activity_at);\nif (!rawDate) {\n  errors.push('last_activity_at is required (ISO date)');\n} else if (!/^\\d{4}-\\d{2}-\\d{2}/.test(rawDate) || isNaN(new Date(rawDate).getTime())) {\n  errors.push('last_activity_at must be a valid ISO date, e.g. 2026-11-01T10:00:00Z');\n} else {\n  const d = new Date(rawDate);\n  if (d.getTime() > Date.now() + 24 * 3600 * 1000) errors.push('last_activity_at cannot be in the future');\n  else lastActivityIso = d.toISOString();\n}\n\nconst allowed = ['deal_id', 'customer_name', 'customer_email', 'stage', 'amount', 'currency', 'last_activity_at', 'next_step', 'notes'];\nconst ignoredFields = Object.keys(body).filter((k) => !allowed.includes(k));\n\nreturn {\n  json: {\n    valid: errors.length === 0,\n    errors,\n    ignored_fields: ignoredFields,\n    deal: {\n      deal_id: dealId,\n      customer_name: customerName.slice(0, 200),\n      customer_email: customerEmail,\n      stage,\n      amount,\n      currency,\n      last_activity_at: lastActivityIso,\n      next_step: scrub(body.next_step),\n      notes: scrub(body.notes),\n    },\n  },\n};"
+      },
+      "id": "df323205-2da5-4952-ae08-6cccfc320607",
+      "name": "Validate Deal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9221aef3-0de5-4a2c-a150-3d38e394a7ae",
+      "name": "Is Deal Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KGG81nWLg5rNtmtz",
+          "cachedResultName": "deals"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "deal_id",
+              "keyValue": "={{ $json.deal.deal_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "deal_id": "={{ $json.deal.deal_id }}",
+            "customer_name": "={{ $json.deal.customer_name }}",
+            "customer_email": "={{ $json.deal.customer_email }}",
+            "stage": "={{ $json.deal.stage }}",
+            "amount": "={{ $json.deal.amount }}",
+            "currency": "={{ $json.deal.currency }}",
+            "last_activity_at": "={{ $json.deal.last_activity_at }}",
+            "next_step": "={{ $json.deal.next_step }}",
+            "notes": "={{ $json.deal.notes }}",
+            "received_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "deal_id",
+              "displayName": "deal_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_activity_at",
+              "displayName": "last_activity_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "next_step",
+              "displayName": "next_step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "821dd01a-5f5d-43ab-86d8-31787d0b93cc",
+      "name": "Upsert Deal",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, deal_id: $(\"Validate Deal\").item.json.deal.deal_id, message: \"Deal saved\", ignored_fields: $(\"Validate Deal\").item.json.ignored_fields }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "088734c3-1acb-452c-87b1-9032312d4bc2",
+      "name": "Respond Saved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        960,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, message: \"Invalid deal payload. Nothing was saved.\", errors: $json.errors }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "00be25db-8343-444a-a1f7-2a9bc95614e0",
+      "name": "Respond Invalid",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        736,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "e57d251c-4140-4eff-a69d-91874ed5c622",
+      "name": "Daily 9AM Jerusalem",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-1",
+              "name": "inactivity_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "cfg-2",
+              "name": "high_value_amount",
+              "value": 50000,
+              "type": "number"
+            },
+            {
+              "id": "cfg-3",
+              "name": "closed_stages",
+              "value": "closed_won,closed_lost,won,lost",
+              "type": "string"
+            },
+            {
+              "id": "cfg-4",
+              "name": "max_deals_per_run",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "cfg-5",
+              "name": "draft_language",
+              "value": "English",
+              "type": "string"
+            },
+            {
+              "id": "cfg-6",
+              "name": "telegram_chat_id",
+              "value": "YOUR_TELEGRAM_CHAT_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "45c45846-1a60-43a0-a95d-e1f796059fbc",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        288,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KGG81nWLg5rNtmtz",
+          "cachedResultName": "deals"
+        },
+        "returnAll": true
+      },
+      "id": "1bfc0460-a25e-4972-b89b-40e155bc8e0f",
+      "name": "Get Deals",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deterministic priority score (0-100). The AI model never changes it.\n// idle_points  (0-50): days_inactive / 30 * 50, capped at 50\n// value_points (0-30): amount / high_value_amount * 30, capped at 30\n// stage_points (0-20): fixed weight per stage (later stages = more at stake)\nconst cfg = $('Config').first().json;\nconst threshold = Number(cfg.inactivity_days) || 7;\nconst highValue = Number(cfg.high_value_amount) || 50000;\nconst maxDeals = Number(cfg.max_deals_per_run) || 50;\nconst closed = String(cfg.closed_stages || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);\nconst stageWeights = { lead: 4, new: 4, qualification: 8, discovery: 8, demo: 12, proposal: 16, negotiation: 20, contract: 20 };\nconst now = Date.now();\nconst out = [];\n\n$input.all().forEach((item, index) => {\n  const d = item.json || {};\n  if (Object.keys(d).length === 0) return;\n  try {\n    const stage = String(d.stage || '').trim().toLowerCase();\n    if (closed.includes(stage)) return;\n    if (!d.deal_id) throw new Error('Row has no deal_id');\n    const ts = new Date(d.last_activity_at).getTime();\n    if (isNaN(ts)) throw new Error('Invalid or missing last_activity_at');\n    const days = Math.floor((now - ts) / 86400000);\n    if (days < threshold) return;\n    const amount = Number(d.amount) || 0;\n    const idlePoints = Math.min(50, Math.round((days / 30) * 50));\n    const valuePoints = Math.min(30, Math.max(0, Math.round((amount / highValue) * 30)));\n    const stagePoints = Object.prototype.hasOwnProperty.call(stageWeights, stage) ? stageWeights[stage] : 10;\n    const score = Math.max(0, Math.min(100, idlePoints + valuePoints + stagePoints));\n    out.push({\n      json: {\n        deal_id: String(d.deal_id),\n        customer_name: d.customer_name || '',\n        stage,\n        amount,\n        currency: d.currency || 'ILS',\n        last_activity_at: new Date(ts).toISOString(),\n        next_step: d.next_step || '',\n        notes: d.notes || '',\n        days_inactive: days,\n        priority_score: score,\n        score_breakdown: { idle_points: idlePoints, value_points: valuePoints, stage_points: stagePoints },\n        scoring_error: '',\n      },\n      pairedItem: { item: index },\n    });\n  } catch (e) {\n    out.push({\n      json: { deal_id: String(d.deal_id || 'unknown'), customer_name: d.customer_name || '', scoring_error: e.message, priority_score: 0 },\n      pairedItem: { item: index },\n    });\n  }\n});\n\nout.sort((a, b) => b.json.priority_score - a.json.priority_score);\nreturn out.slice(0, maxDeals);"
+      },
+      "id": "d7752dd5-746b-44c0-8698-12dcf906eb4a",
+      "name": "Score Stalled Deals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.scoring_error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6612ab55-7c73-4039-abe8-e5faae847cb6",
+      "name": "Scored OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1072,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Assess this stalled deal and prepare a follow-up draft for a human to review.\n\nDeal data (the ONLY source of truth):\n{{ JSON.stringify({ deal_id: $json.deal_id, customer_name: $json.customer_name, stage: $json.stage, amount: $json.amount, currency: $json.currency, last_activity_at: $json.last_activity_at, days_inactive: $json.days_inactive, next_step: $json.next_step, notes: $json.notes }, null, 2) }}\n\nSystem-computed priority score (fixed, do not change or recompute): {{ $json.priority_score }}/100\nInactivity threshold: {{ $('Config').first().json.inactivity_days }} days\nWrite draft_subject and draft_message in: {{ $('Config').first().json.draft_language }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a careful B2B sales assistant helping a team rescue stalled deals.\nRules:\n- Use ONLY the facts present in the deal data. Never invent meetings, discounts, prices, deadlines, features, names, or commitments.\n- Make no promises on behalf of the company (no discounts, no delivery dates, no guarantees).\n- If key information is missing or unclear (for example empty notes or next_step), say so in reason, set recommended_action to collect the missing information internally first, keep the draft neutral and short, and lower confidence.\n- risk_level must be one of: low, medium, high. Base it on inactivity, stage and the information available.\n- recommended_action: one concrete next step for the sales rep.\n- draft_message: a short, polite follow-up email to the customer, with no placeholders other than the rep signature line. It will be reviewed by a human and is never sent automatically.\n- confidence: number between 0 and 1 reflecting how well the data supports your assessment."
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 5,
+          "delayBetweenBatches": 0
+        }
+      },
+      "id": "a0c72eb6-6351-4f24-be26-4ab06b269ceb",
+      "name": "Draft Rescue Plan",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1296,
+        816
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4-mini",
+          "cachedResultName": "gpt-5.4-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "60a76a7d-aa10-46ab-b7fa-dcc196ac268b",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        992
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "Gateway credits",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"risk_level\": { \"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"] },\n    \"reason\": { \"type\": \"string\" },\n    \"recommended_action\": { \"type\": \"string\" },\n    \"draft_subject\": { \"type\": \"string\" },\n    \"draft_message\": { \"type\": \"string\" },\n    \"confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 }\n  },\n  \"required\": [\"risk_level\", \"reason\", \"recommended_action\", \"draft_subject\", \"draft_message\", \"confidence\"]\n}"
+      },
+      "id": "7f1fd8ae-5b29-4927-a721-435524905c5e",
+      "name": "Rescue Plan Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pa-1",
+              "name": "deal_id",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.deal_id }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-2",
+              "name": "customer_name",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-3",
+              "name": "stage",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.stage }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-4",
+              "name": "amount",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "pa-5",
+              "name": "currency",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-6",
+              "name": "days_inactive",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.days_inactive }}",
+              "type": "number"
+            },
+            {
+              "id": "pa-7",
+              "name": "priority_score",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.priority_score }}",
+              "type": "number"
+            },
+            {
+              "id": "pa-8",
+              "name": "risk_level",
+              "value": "={{ $json.output.risk_level }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-9",
+              "name": "reason",
+              "value": "={{ $json.output.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-10",
+              "name": "recommended_action",
+              "value": "={{ $json.output.recommended_action }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-11",
+              "name": "draft_subject",
+              "value": "={{ $json.output.draft_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-12",
+              "name": "draft_message",
+              "value": "={{ $json.output.draft_message }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-13",
+              "name": "confidence",
+              "value": "={{ Number($json.output.confidence) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "pa-14",
+              "name": "status",
+              "value": "pending",
+              "type": "string"
+            },
+            {
+              "id": "pa-15",
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "pa-16",
+              "name": "telegram_text",
+              "value": "={{ (() => { const esc = (v) => String(v ?? \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\"); const d = $(\"Score Stalled Deals\").item.json; const o = $json.output || {}; const NL = String.fromCharCode(10); return [\"<b>Revenue Rescue alert</b>\", \"Customer: \" + esc(d.customer_name), \"Deal: \" + esc(d.deal_id) + \" | \" + esc(d.stage) + \" | \" + esc(d.amount) + \" \" + esc(d.currency), \"Inactive: \" + d.days_inactive + \" days | Priority: \" + d.priority_score + \"/100 | Risk: \" + esc(o.risk_level), \"\", \"<b>Why:</b> \" + esc(o.reason), \"<b>Recommended:</b> \" + esc(o.recommended_action), \"\", \"Draft saved in deal_actions (status=pending). Nothing was sent to the customer.\"].join(NL); })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a5aa1cb2-2464-4e36-9e96-b391ecd3eed9",
+      "name": "Prepare Action",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1648,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "hmDC7qrkuGujfH3r",
+          "cachedResultName": "deal_actions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "deal_id": "={{ $json.deal_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "stage": "={{ $json.stage }}",
+            "amount": "={{ $json.amount }}",
+            "days_inactive": "={{ $json.days_inactive }}",
+            "priority_score": "={{ $json.priority_score }}",
+            "risk_level": "={{ $json.risk_level }}",
+            "reason": "={{ $json.reason }}",
+            "recommended_action": "={{ $json.recommended_action }}",
+            "draft_subject": "={{ $json.draft_subject }}",
+            "draft_message": "={{ $json.draft_message }}",
+            "confidence": "={{ $json.confidence }}",
+            "status": "={{ $json.status }}",
+            "error_message": "",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "deal_id",
+              "displayName": "deal_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days_inactive",
+              "displayName": "days_inactive",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority_score",
+              "displayName": "priority_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "risk_level",
+              "displayName": "risk_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "draft_subject",
+              "displayName": "draft_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "draft_message",
+              "displayName": "draft_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1ff1bd29-6db1-4860-93ba-36f08ebb56b2",
+      "name": "Save Pending Action",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Config\").first().json.telegram_chat_id }}",
+        "text": "={{ $(\"Prepare Action\").item.json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "280034ec-9a8a-4d5d-9b13-809dadb9b074",
+      "name": "Notify Team on Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2096,
+        768
+      ],
+      "webhookId": "db90c6a4-d65b-48f8-8504-542ca0be725e",
+      "credentials": {
+        "telegramApi": {
+          "id": "SwE6nHdZACl3GxE2",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "er-1",
+              "name": "deal_id",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.deal_id }}",
+              "type": "string"
+            },
+            {
+              "id": "er-2",
+              "name": "customer_name",
+              "value": "={{ $(\"Score Stalled Deals\").item.json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "er-3",
+              "name": "error_message",
+              "value": "={{ $json.scoring_error || (typeof $json.error === \"string\" ? $json.error : ($json.error && $json.error.message) || JSON.stringify($json.error || \"Unknown error\")) }}",
+              "type": "string"
+            },
+            {
+              "id": "er-4",
+              "name": "created_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8eb75321-bd49-456f-94ab-4bd30b7ae60c",
+      "name": "Build Error Record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1648,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "hmDC7qrkuGujfH3r",
+          "cachedResultName": "deal_actions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "deal_id": "={{ $json.deal_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "status": "error",
+            "error_message": "={{ $json.error_message }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "deal_id",
+              "displayName": "deal_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fd56aff7-1830-4f4a-bab0-344572382cf8",
+      "name": "Log Deal Error",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        1200
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Deal Update Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Deal": {
+      "main": [
+        [
+          {
+            "node": "Is Deal Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Deal Valid?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Deal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Deal": {
+      "main": [
+        [
+          {
+            "node": "Respond Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 9AM Jerusalem": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Deals": {
+      "main": [
+        [
+          {
+            "node": "Score Stalled Deals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Stalled Deals": {
+      "main": [
+        [
+          {
+            "node": "Scored OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scored OK?": {
+      "main": [
+        [
+          {
+            "node": "Draft Rescue Plan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Rescue Plan": {
+      "main": [
+        [
+          {
+            "node": "Prepare Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Draft Rescue Plan",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rescue Plan Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Draft Rescue Plan",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Action": {
+      "main": [
+        [
+          {
+            "node": "Save Pending Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Pending Action": {
+      "main": [
+        [
+          {
+            "node": "Notify Team on Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Record": {
+      "main": [
+        [
+          {
+            "node": "Log Deal Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Asia/Jerusalem"
+  },
+  "versionId": "47823b97-76dc-4351-92da-47474ad2c3a4",
+  "meta": {
+    "instanceId": "29b09ffd0ba3be17a6f2882ef77c89d2c876f941fc888664859c63bc663f7dd2"
+  },
+  "nodeGroups": [
+    {
+      "id": "8ce7cc9a-8673-4984-9a34-3e7f2c280e0b",
+      "name": "Validate and store deal",
+      "nodeIds": [
+        "df323205-2da5-4952-ae08-6cccfc320607",
+        "9221aef3-0de5-4a2c-a150-3d38e394a7ae",
+        "821dd01a-5f5d-43ab-86d8-31787d0b93cc",
+        "088734c3-1acb-452c-87b1-9032312d4bc2",
+        "00be25db-8343-444a-a1f7-2a9bc95614e0"
+      ],
+      "description": "Checks each incoming deal, strips payment data and secrets, saves it by deal_id, and replies with success or clear errors"
+    },
+    {
+      "id": "f66eac67-8d8c-4f71-9699-0108568970aa",
+      "name": "Find stalled deals",
+      "nodeIds": [
+        "45c45846-1a60-43a0-a95d-e1f796059fbc",
+        "1bfc0460-a25e-4972-b89b-40e155bc8e0f",
+        "d7752dd5-746b-44c0-8698-12dcf906eb4a"
+      ],
+      "description": "Editable settings, then open deals idle past the threshold get a fixed 0-100 priority from idle days, value and stage"
+    },
+    {
+      "id": "984cc96d-c8a0-4be1-be29-62921de4b54d",
+      "name": "Draft rescue plans",
+      "nodeIds": [
+        "6612ab55-7c73-4039-abe8-e5faae847cb6",
+        "a0c72eb6-6351-4f24-be26-4ab06b269ceb",
+        "60a76a7d-aa10-46ab-b7fa-dcc196ac268b",
+        "7f1fd8ae-5b29-4927-a721-435524905c5e",
+        "a5aa1cb2-2464-4e36-9e96-b391ecd3eed9",
+        "1ff1bd29-6db1-4860-93ba-36f08ebb56b2",
+        "280034ec-9a8a-4d5d-9b13-809dadb9b074",
+        "8eb75321-bd49-456f-94ab-4bd30b7ae60c",
+        "fd56aff7-1830-4f4a-bab0-344572382cf8"
+      ],
+      "description": "Per deal: AI risk, next step and draft saved as pending, team gets a summary; failures logged by deal_id, others continue"
+    }
+  ],
+  "id": "70O3eZfqLZ4n6byB",
+  "tags": []
+}
