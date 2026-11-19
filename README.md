@@ -125,27 +125,42 @@
   </tr>
   <tr>
     <td align="center"><strong>13 · مساعد المعرفة (RAG)</strong><br><a href="./13-rag-knowledge-agent/README.md"><img src="./13-rag-knowledge-agent/screenshots/workflow-overview.png" alt="مخطط مساعد المعرفة الداخلي في n8n" width="420"></a></td>
-    <td align="center"><strong>14 · تقييم العملاء وتوزيعهم</strong><br><a href="./14-ai-lead-scoring-and-routing/README.md"><img src="./14-ai-lead-scoring-and-routing/screenshots/workflow-overview.png" alt="مخطط تقييم العملاء المحتملين وتوزيعهم في n8n" width="420"></a></td>
+    <td align="center"><strong>14 · تقييم العملاء وتوزيعهم</strong><br><a href="./14-ai-lead-scoring-and-routing/README.md"><img src="./assets/thumbs/14-ai-lead-scoring-and-routing.png" alt="مخطط تقييم العملاء المحتملين وتوزيعهم في n8n" width="420"></a></td>
   </tr>
   <tr>
-    <td align="center"><strong>15 · تنظيف بيانات جهات الاتصال</strong><br><a href="./15-contact-data-cleaning/README.md"><img src="./15-contact-data-cleaning/screenshots/workflow-overview.png" alt="مخطط تنظيف بيانات جهات الاتصال في n8n" width="420"></a></td>
-    <td align="center"><strong>16 · إزالة التكرار من العملاء</strong><br><a href="./16-customer-deduplication/README.md"><img src="./16-customer-deduplication/screenshots/workflow-overview.png" alt="مخطط مقارنة طرق إزالة تكرار العملاء في n8n" width="420"></a></td>
+    <td align="center"><strong>15 · تنظيف بيانات جهات الاتصال</strong><br><a href="./15-contact-data-cleaning/README.md"><img src="./assets/thumbs/15-contact-data-cleaning.png" alt="مخطط تنظيف بيانات جهات الاتصال في n8n" width="420"></a></td>
+    <td align="center"><strong>16 · إزالة التكرار من العملاء</strong><br><a href="./16-customer-deduplication/README.md"><img src="./assets/thumbs/16-customer-deduplication.png" alt="مخطط مقارنة طرق إزالة تكرار العملاء في n8n" width="420"></a></td>
   </tr>
   <tr>
-    <td align="center"><strong>17 · تحويل JSON إلى جدول</strong><br><a href="./17-nested-json-to-table/README.md"><img src="./17-nested-json-to-table/screenshots/workflow-overview.png" alt="مخطط تحويل JSON متداخل إلى جدول في n8n" width="420"></a></td>
-    <td align="center"><strong>18 · استخراج بيانات التواصل</strong><br><a href="./18-regex-contact-extraction/README.md"><img src="./18-regex-contact-extraction/screenshots/workflow-overview.png" alt="مخطط استخراج الأرقام والإيميلات من الرسائل في n8n" width="420"></a></td>
+    <td align="center"><strong>17 · تحويل JSON إلى جدول</strong><br><a href="./17-nested-json-to-table/README.md"><img src="./assets/thumbs/17-nested-json-to-table.png" alt="مخطط تحويل JSON متداخل إلى جدول في n8n" width="420"></a></td>
+    <td align="center"><strong>18 · استخراج بيانات التواصل</strong><br><a href="./18-regex-contact-extraction/README.md"><img src="./assets/thumbs/18-regex-contact-extraction.png" alt="مخطط استخراج الأرقام والإيميلات من الرسائل في n8n" width="420"></a></td>
   </tr>
   <tr>
-    <td align="center"><strong>19 · حساب العمولات</strong><br><a href="./19-javascript-commission-calculator/README.md"><img src="./19-javascript-commission-calculator/screenshots/workflow-overview.png" alt="مخطط حساب العمولات ومقارنة النتائج في n8n" width="420"></a></td>
+    <td align="center"><strong>19 · حساب العمولات</strong><br><a href="./19-javascript-commission-calculator/README.md"><img src="./assets/thumbs/19-javascript-commission-calculator.png" alt="مخطط حساب العمولات ومقارنة النتائج في n8n" width="420"></a></td>
     <td align="center"><strong>20 · ربط API الطقس</strong><br><a href="./20-http-request-weather-api/README.md"><img src="./20-http-request-weather-api/screenshots/workflow-overview.svg" alt="مخطط ربط Open-Meteo عبر HTTP Request ومقارنة النتائج" width="420"></a></td>
   </tr>
   <tr>
-    <td align="center"><strong>28 · إنقاذ الصفقات</strong><br><a href="./28-revenue-rescue-engine/README.md"><img src="./28-revenue-rescue-engine/screenshots/workflow-overview.png" alt="مخطط متابعة الصفقات المتوقفة في n8n" width="420"></a></td>
-    <td align="center"><strong>29 · مراقبة المخزون</strong><br><a href="./29-predictive-inventory-control/README.md"><img src="./29-predictive-inventory-control/screenshots/workflow-overview.png" alt="مخطط توقع مخاطر المخزون في n8n" width="420"></a></td>
+    <td align="center"><strong>21 · حاسبة الطلبات</strong><br><a href="./21-webhook-order-calculator/README.md"><img src="./assets/thumbs/21-webhook-order-calculator.png" alt="مخطط حاسبة الطلبات عبر Webhook في n8n" width="420"></a></td>
+    <td align="center"><strong>22 · طبّاخ الثلاجة</strong><br><a href="./22-fridge-chef-telegram-bot/README.md"><img src="./assets/thumbs/22-fridge-chef-telegram-bot.png" alt="مخطط بوت طبّاخ الثلاجة على Telegram في n8n" width="420"></a></td>
   </tr>
   <tr>
-    <td align="center"><strong>30 · استعادة التعلّم</strong><br><a href="./30-learning-recovery/README.md"><img src="./30-learning-recovery/screenshots/workflow-overview.png" alt="مخطط التقييم التشخيصي وخطة التعلّم في n8n" width="420"></a></td>
-    <td align="center"><strong>30 · تسجيل التمارين والتقرير الأسبوعي</strong><br><a href="./30-learning-recovery/README.md"><img src="./30-learning-recovery/screenshots/exercise-update.png" alt="مخطط تحديث إتقان الطالب بعد التمرين في n8n" width="420"></a></td>
+    <td align="center"><strong>23 · حارس الحضور</strong><br><a href="./23-attendance-guardian/README.md"><img src="./assets/thumbs/23-attendance-guardian.png" alt="مخطط حارس الحضور في n8n" width="420"></a></td>
+    <td align="center"><strong>24 · مراقبة الأسعار</strong><br><a href="./24-price-monitor/README.md"><img src="./assets/thumbs/24-price-monitor.png" alt="مخطط مراقبة الأسعار مع تنبيهات Telegram في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>25 · رادار المنافسين</strong><br><a href="./25-competitor-radar/README.md"><img src="./assets/thumbs/25-competitor-radar.png" alt="مخطط رادار المنافسين في n8n" width="420"></a></td>
+    <td align="center"><strong>26 · فرز السير الذاتية</strong><br><a href="./26-ai-recruiter-cv-screening/README.md"><img src="./assets/thumbs/26-ai-recruiter-cv-screening.png" alt="مخطط فرز السير الذاتية بالذكاء الاصطناعي في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>27 · خلاصة المعرفة</strong><br><a href="./27-knowledge-digest/README.md"><img src="./assets/thumbs/27-knowledge-digest.png" alt="مخطط خلاصة المعرفة والتلخيص عبر Telegram في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>28 · إنقاذ الصفقات</strong><br><a href="./28-revenue-rescue-engine/README.md"><img src="./assets/thumbs/28-revenue-rescue-engine.png" alt="مخطط متابعة الصفقات المتوقفة في n8n" width="420"></a></td>
+    <td align="center"><strong>29 · مراقبة المخزون</strong><br><a href="./29-predictive-inventory-control/README.md"><img src="./assets/thumbs/29-predictive-inventory-control.png" alt="مخطط توقع مخاطر المخزون في n8n" width="420"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>30 · استعادة التعلّم</strong><br><a href="./30-learning-recovery/README.md"><img src="./assets/thumbs/30-learning-recovery-workflow-overview.png" alt="مخطط التقييم التشخيصي وخطة التعلّم في n8n" width="420"></a></td>
+    <td align="center"><strong>30 · تسجيل التمارين والتقرير الأسبوعي</strong><br><a href="./30-learning-recovery/README.md"><img src="./assets/thumbs/30-learning-recovery-exercise-update.png" alt="مخطط تحديث إتقان الطالب بعد التمرين في n8n" width="420"></a></td>
   </tr>
 </table>
 
