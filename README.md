@@ -1,36 +1,57 @@
 <div align="center">
 
-<img src="./assets/automation-showcase.gif" alt="Animated n8n automation portfolio banner" width="100%">
+<img src="./assets/hero.svg" alt="n8n Automation Portfolio — أتمتة عملية، خطوة بخطوة" width="100%">
 
-# n8n Automation Portfolio
+<br>
 
-### أتمتة عملية، خطوة بخطوة
-
-ثلاثون workflow جاهزًا لـ **n8n** تساعدك على تنظيم البريد والعملاء، مراقبة الصفقات والمخزون، دعم التعلّم، وأتمتة مهام يومية متنوعة — مع شرح وصور وطريقة استخدام لكل مشروع.
-
-**استكشف الموقع المفهرس:** [مشاريع n8n بالعربية](https://mohammed4122002.github.io/n8n-automation-portfolio/) · [ملفات المشروع على GitHub](https://github.com/mohammed4122002/n8n-automation-portfolio)
-
-## الموقع والظهور في البحث
-
-- ينشئ GitHub Actions صفحة عربية مستقلة لكل مشروع، مع عنوان ووصف ورابط أساسي وبيانات مشاركة اجتماعية وبيانات منظمة لمحركات البحث.
-- عند النشر الأول، اختر **Settings → Pages → Build and deployment → GitHub Actions** في إعدادات المستودع، ثم شغّل إجراء **Deploy SEO site to GitHub Pages** من تبويب Actions.
-- بعد نجاح النشر، أرسل `https://mohammed4122002.github.io/n8n-automation-portfolio/sitemap.xml` إلى Google Search Console وBing Webmaster Tools لطلب فهرسة صفحات المشاريع. ظهور الصفحات يعتمد على محركات البحث وقد يستغرق وقتًا.
+<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://readme-typing-svg.demolab.com?font=Cairo&weight=700&size=24&duration=2800&pause=900&color=FF6D5A&center=true&vCenter=true&width=760&lines=%D8%AB%D9%84%D8%A7%D8%AB%D9%88%D9%86+workflow+%D8%AC%D8%A7%D9%87%D8%B2%D9%8B%D8%A7+%D9%84%D9%80+n8n;Gmail+%C2%B7+Sheets+%C2%B7+Drive+%C2%B7+Telegram+%C2%B7+AI;%D8%B4%D8%B1%D8%AD+%D9%88%D8%B5%D9%88%D8%B1+%D9%88%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1+%D9%84%D9%83%D9%84+%D9%85%D8%B4%D8%B1%D9%88%D8%B9" alt="Typing animation"></a>
 
 <p>
   <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
   <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
   <img src="https://img.shields.io/badge/Projects-30-24B89A?style=for-the-badge" alt="Thirty projects">
+  <img src="https://img.shields.io/badge/Language-العربية-FFB86C?style=for-the-badge" alt="Arabic">
 </p>
 
-<a href="#المشاريع">استكشف المشاريع</a> ·
-<a href="#البدء-السريع">البدء السريع</a> ·
-<a href="#ملاحظات-مهمة">ملاحظات مهمة</a>
+<img src="./assets/stats.svg" alt="إحصائيات المعرض" width="100%">
+
+<br>
+
+**30 workflow جاهزًا لـ n8n** لتنظيم البريد والعملاء، مراقبة الصفقات والمخزون، دعم التعلّم، وأتمتة مهام يومية متنوعة — مع شرح وصور وطريقة استخدام لكل مشروع.
+
+<a href="https://mohammed4122002.github.io/n8n-automation-portfolio/"><img src="https://img.shields.io/badge/🌐_الموقع_المفهرس-مشاريع_n8n_بالعربية-0b1020?style=for-the-badge" alt="الموقع"></a>
+<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://img.shields.io/badge/GitHub-ملفات_المشروع-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+
+<br><br>
+
+<a href="#-المشاريع">🚀 استكشف المشاريع</a> &nbsp;·&nbsp;
+<a href="#-البدء-السريع">⚡ البدء السريع</a> &nbsp;·&nbsp;
+<a href="#️-ملاحظات-مهمة">⚠️ ملاحظات مهمة</a>
+
+<img src="./assets/divider.svg" alt="" width="100%">
 
 </div>
 
+<details>
+<summary><b>🎬 شاهد العرض المتحرك (GIF)</b></summary>
+<br>
+<div align="center">
+<img src="./assets/automation-showcase.gif" alt="عرض متحرك لمشاريع n8n" width="100%">
+</div>
+</details>
+
+<details>
+<summary><b>🔍 الموقع والظهور في البحث</b></summary>
+
+- ينشئ GitHub Actions صفحة عربية مستقلة لكل مشروع، مع عنوان ووصف ورابط أساسي وبيانات مشاركة اجتماعية وبيانات منظمة لمحركات البحث.
+- عند النشر الأول، اختر **Settings → Pages → Build and deployment → GitHub Actions** في إعدادات المستودع، ثم شغّل إجراء **Deploy SEO site to GitHub Pages** من تبويب Actions.
+- بعد نجاح النشر، أرسل `https://mohammed4122002.github.io/n8n-automation-portfolio/sitemap.xml` إلى Google Search Console وBing Webmaster Tools لطلب فهرسة صفحات المشاريع. ظهور الصفحات يعتمد على محركات البحث وقد يستغرق وقتًا.
+
+</details>
+
 ---
 
-## المشاريع
+## 🚀 المشاريع
 
 | # | المشروع | النتيجة | التفاصيل |
 |---|---|---|---|
@@ -67,7 +88,7 @@
 
 كل صفحة مشروع تشرح الفكرة، المتطلبات، الإعداد، التشغيل والاختبار، وتعرض لقطات من workflow والنتيجة.
 
-## لمحة من المشاريع
+## 🖼️ لمحة من المشاريع
 
 <table>
   <tr>
@@ -128,7 +149,7 @@
   </tr>
 </table>
 
-## البدء السريع
+## ⚡ البدء السريع
 
 ### المتطلبات
 
@@ -144,15 +165,18 @@
 5. شغّل **Manual Test** واختبره ببيانات مناسبة.
 6. بعد التأكد من النتيجة، فعّل التشغيل التلقائي إن رغبت.
 
-## التقنيات
+## 🧰 التقنيات
 
 `n8n` · `Gmail` · `Google Drive` · `Google Sheets` · `Google Tasks` · `Telegram` · `LinkedIn` · `X` · `OpenAI` · `Gemini`
 
-## هيكل المشروع
+## 📁 هيكل المشروع
 
 ```text
 .
 ├── assets/
+│   ├── hero.svg
+│   ├── stats.svg
+│   ├── divider.svg
 │   └── automation-showcase.gif
 ├── 01-email-digest-telegram/
 ├── 02-smart-gmail-replies/
@@ -188,7 +212,7 @@
 
 يحتوي كل مجلد مشروع على `README.md` للشرح، و`workflow.json` للاستيراد، و`caption-ar.txt`، ومجلد `screenshots/`. وتوجد ملفات الجداول التجريبية أو القوالب في `templates/` داخل المشاريع التي تحتاجها.
 
-## ملاحظات مهمة
+## ⚠️ ملاحظات مهمة
 
 - ابدأ دائمًا بالاختبار اليدوي قبل تفعيل أي تشغيل تلقائي.
 - Workflow الرد على Gmail مضبوط افتراضيًا لحفظ الردود كمسودات. راجع الردود قبل تفعيل الإرسال التلقائي.
