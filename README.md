@@ -1,26 +1,26 @@
 <div align="center">
 
-<img src="./assets/hero.svg" alt="n8n Automation Portfolio — أتمتة عملية، خطوة بخطوة" width="100%">
+<img src="./assets/brand/banner.png" alt="n8n Automation Portfolio — Mohammed Abu Saada" width="100%">
 
 <br>
 
-<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://readme-typing-svg.demolab.com?font=Cairo&weight=700&size=24&duration=2800&pause=900&color=FF6D5A&center=true&vCenter=true&width=760&lines=%D8%AB%D9%84%D8%A7%D8%AB%D9%88%D9%86+workflow+%D8%AC%D8%A7%D9%87%D8%B2%D9%8B%D8%A7+%D9%84%D9%80+n8n;Gmail+%C2%B7+Sheets+%C2%B7+Drive+%C2%B7+Telegram+%C2%B7+AI;%D8%B4%D8%B1%D8%AD+%D9%88%D8%B5%D9%88%D8%B1+%D9%88%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1+%D9%84%D9%83%D9%84+%D9%85%D8%B4%D8%B1%D9%88%D8%B9" alt="Typing animation"></a>
+<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://readme-typing-svg.demolab.com?font=Cairo&weight=700&size=24&duration=2800&pause=900&color=C9A24B&center=true&vCenter=true&width=760&lines=%D8%AB%D9%84%D8%A7%D8%AB%D9%88%D9%86+workflow+%D8%AC%D8%A7%D9%87%D8%B2%D9%8B%D8%A7+%D9%84%D9%80+n8n;Gmail+%C2%B7+Sheets+%C2%B7+Drive+%C2%B7+Telegram+%C2%B7+AI;%D8%B4%D8%B1%D8%AD+%D9%88%D8%B5%D9%88%D8%B1+%D9%88%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1+%D9%84%D9%83%D9%84+%D9%85%D8%B4%D8%B1%D9%88%D8%B9" alt="Typing animation"></a>
 
 <p>
-  <img src="https://img.shields.io/badge/n8n-workflows-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n workflows">
-  <img src="https://img.shields.io/badge/AI-powered-7B61FF?style=for-the-badge" alt="AI powered">
-  <img src="https://img.shields.io/badge/Projects-30-24B89A?style=for-the-badge" alt="Thirty projects">
-  <img src="https://img.shields.io/badge/Language-العربية-FFB86C?style=for-the-badge" alt="Arabic">
+  <img src="https://img.shields.io/badge/n8n-workflows-C9A24B?style=for-the-badge&labelColor=111111&logo=n8n&logoColor=C9A24B" alt="n8n workflows">
+  <img src="https://img.shields.io/badge/AI-powered-C9A24B?style=for-the-badge&labelColor=111111" alt="AI powered">
+  <img src="https://img.shields.io/badge/Projects-30-C9A24B?style=for-the-badge&labelColor=111111" alt="Thirty projects">
+  <img src="https://img.shields.io/badge/Language-العربية-C9A24B?style=for-the-badge&labelColor=111111" alt="Arabic">
 </p>
 
-<img src="./assets/stats.svg" alt="إحصائيات المعرض" width="100%">
+<img src="./assets/brand/stats.png" alt="إحصائيات المعرض: 30 مشروع، 10+ خدمة، AI، استيراد بنقرة" width="100%">
 
 <br>
 
 **30 workflow جاهزًا لـ n8n** لتنظيم البريد والعملاء، مراقبة الصفقات والمخزون، دعم التعلّم، وأتمتة مهام يومية متنوعة — مع شرح وصور وطريقة استخدام لكل مشروع.
 
-<a href="https://mohammed4122002.github.io/n8n-automation-portfolio/"><img src="https://img.shields.io/badge/🌐_الموقع_المفهرس-مشاريع_n8n_بالعربية-0b1020?style=for-the-badge" alt="الموقع"></a>
-<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://img.shields.io/badge/GitHub-ملفات_المشروع-181717?style=for-the-badge&logo=github" alt="GitHub"></a>
+<a href="https://mohammed4122002.github.io/n8n-automation-portfolio/"><img src="https://img.shields.io/badge/🌐_الموقع_المفهرس-مشاريع_n8n_بالعربية-111111?style=for-the-badge&labelColor=C9A24B" alt="الموقع"></a>
+<a href="https://github.com/mohammed4122002/n8n-automation-portfolio"><img src="https://img.shields.io/badge/GitHub-ملفات_المشروع-111111?style=for-the-badge&logo=github&labelColor=C9A24B" alt="GitHub"></a>
 
 <br><br>
 
@@ -28,7 +28,7 @@
 <a href="#-البدء-السريع">⚡ البدء السريع</a> &nbsp;·&nbsp;
 <a href="#️-ملاحظات-مهمة">⚠️ ملاحظات مهمة</a>
 
-<img src="./assets/divider.svg" alt="" width="100%">
+<img src="./assets/brand/divider.svg" alt="" width="100%">
 
 </div>
 
@@ -189,9 +189,8 @@
 ```text
 .
 ├── assets/
-│   ├── hero.svg
-│   ├── stats.svg
-│   ├── divider.svg
+│   ├── brand/            # بانر، إحصائيات، فاصل، تذييل
+│   ├── thumbs/
 │   └── automation-showcase.gif
 ├── 01-email-digest-telegram/
 ├── 02-smart-gmail-replies/
@@ -243,6 +242,15 @@
 
 <div align="center">
 
+### 🚀 السلسلة التالية: 30 Days of LLM Apps
+بعد n8n، نفتح الصندوق الأسود ونبني تطبيقات ذكاء اصطناعي بـ Hugging Face و LangChain و LangSmith.
+
+<a href="https://github.com/mohammed4122002/30-days-of-llm-apps"><img src="https://img.shields.io/badge/30_Days_of-LLM_Apps-C9A24B?style=for-the-badge&labelColor=111111&logo=github&logoColor=C9A24B" alt="30 Days of LLM Apps"></a>
+
+<br><br>
+
 **بُنيت هذه المشاريع لتكون عملية، قابلة للتجربة، وسهلة التطوير.**
+
+<img src="./assets/brand/footer.png" alt="Mohammed Abu Saada — Innovate • Automate • Transform" width="100%">
 
 </div>
