@@ -1,6 +1,8 @@
 import { Composition } from "remotion";
 import { SoundTest } from "./SoundTest";
 import { VoiceOver, calculateVoiceOverMetadata, VoiceOverProps } from "./VoiceOver";
+import { Still } from "remotion";
+import { Day2Cover } from "./day2/Day2Cover";
 import { Day2Reel, calculateDay2Metadata } from "./day2/Day2Reel";
 import day2Captions from "../public/voice/day2.captions.json";
 
@@ -18,5 +20,6 @@ export const RemotionRoot: React.FC = () => (
       calculateMetadata={calculateVoiceOverMetadata}
     />
     <Composition id="Day2Reel" component={Day2Reel} fps={30} width={1080} height={1920} durationInFrames={3060} calculateMetadata={calculateDay2Metadata} />
+    <Still id="Day2Cover" component={Day2Cover} width={1080} height={1920} />
   </>
 );
