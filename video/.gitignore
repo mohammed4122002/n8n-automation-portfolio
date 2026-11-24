@@ -4,3 +4,4 @@ out/
 public/sfx/remotion/
 public/voice/*.wav
 whisper.cpp/
+work/

@@ -1,0 +1,1353 @@
+[
+ {
+  "text": "أول",
+  "startMs": 130,
+  "endMs": 640,
+  "timestampMs": 2700,
+  "confidence": 0.236675
+ },
+ {
+  "text": " ما",
+  "startMs": 640,
+  "endMs": 1040,
+  "timestampMs": 2960,
+  "confidence": 0.892381
+ },
+ {
+  "text": " بلشت",
+  "startMs": 1040,
+  "endMs": 1910,
+  "timestampMs": 3080,
+  "confidence": 0.714876
+ },
+ {
+  "text": " مع",
+  "startMs": 1910,
+  "endMs": 2340,
+  "timestampMs": 3520,
+  "confidence": 0.946189
+ },
+ {
+  "text": " لانجدشين",
+  "startMs": 2340,
+  "endMs": 4150,
+  "timestampMs": 3660,
+  "confidence": 0.204975
+ },
+ {
+  "text": " كنت",
+  "startMs": 4150,
+  "endMs": 4440,
+  "timestampMs": 4420,
+  "confidence": 0.859756
+ },
+ {
+  "text": " أكتب",
+  "startMs": 4440,
+  "endMs": 4800,
+  "timestampMs": 4660,
+  "confidence": 0.841964
+ },
+ {
+  "text": " كوت",
+  "startMs": 4800,
+  "endMs": 5080,
+  "timestampMs": 5020,
+  "confidence": 0.761213
+ },
+ {
+  "text": " طويل",
+  "startMs": 5080,
+  "endMs": 5540,
+  "timestampMs": 5320,
+  "confidence": 0.985655
+ },
+ {
+  "text": " بس",
+  "startMs": 5540,
+  "endMs": 5850,
+  "timestampMs": 6040,
+  "confidence": 0.989091
+ },
+ {
+  "text": " عشان",
+  "startMs": 5850,
+  "endMs": 6260,
+  "timestampMs": 6280,
+  "confidence": 0.992756
+ },
+ {
+  "text": " أوصل",
+  "startMs": 6260,
+  "endMs": 6740,
+  "timestampMs": 6620,
+  "confidence": 0.989255
+ },
+ {
+  "text": " سؤال",
+  "startMs": 6740,
+  "endMs": 7220,
+  "timestampMs": 7060,
+  "confidence": 0.993669
+ },
+ {
+  "text": " للنموذج",
+  "startMs": 7220,
+  "endMs": 8100,
+  "timestampMs": 7600,
+  "confidence": 0.991198
+ },
+ {
+  "text": " وطلع",
+  "startMs": 8100,
+  "endMs": 8500,
+  "timestampMs": 8420,
+  "confidence": 0.994163
+ },
+ {
+  "text": " الموضوع",
+  "startMs": 8500,
+  "endMs": 9200,
+  "timestampMs": 8800,
+  "confidence": 0.987402
+ },
+ {
+  "text": " كله",
+  "startMs": 9200,
+  "endMs": 9500,
+  "timestampMs": 9320,
+  "confidence": 0.996633
+ },
+ {
+  "text": " سطر",
+  "startMs": 9500,
+  "endMs": 9800,
+  "timestampMs": 9580,
+  "confidence": 0.996803
+ },
+ {
+  "text": " واحد",
+  "startMs": 9800,
+  "endMs": 10240,
+  "timestampMs": 10040,
+  "confidence": 0.998658
+ },
+ {
+  "text": " أي",
+  "startMs": 10240,
+  "endMs": 10550,
+  "timestampMs": 11780,
+  "confidence": 0.989046
+ },
+ {
+  "text": " تطبيق",
+  "startMs": 10550,
+  "endMs": 11160,
+  "timestampMs": 11940,
+  "confidence": 0.99955
+ },
+ {
+  "text": " ذكاء",
+  "startMs": 11160,
+  "endMs": 11700,
+  "timestampMs": 12360,
+  "confidence": 0.970125
+ },
+ {
+  "text": " الصناعي",
+  "startMs": 11700,
+  "endMs": 12870,
+  "timestampMs": 12720,
+  "confidence": 0.738002
+ },
+ {
+  "text": " فيه",
+  "startMs": 12870,
+  "endMs": 13040,
+  "timestampMs": 13240,
+  "confidence": 0.988219
+ },
+ {
+  "text": " ثلاثة",
+  "startMs": 13040,
+  "endMs": 13690,
+  "timestampMs": 13480,
+  "confidence": 0.990512
+ },
+ {
+  "text": " قطة",
+  "startMs": 13690,
+  "endMs": 14260,
+  "timestampMs": 14020,
+  "confidence": 0.985691
+ },
+ {
+  "text": " اللي",
+  "startMs": 14260,
+  "endMs": 14580,
+  "timestampMs": 14540,
+  "confidence": 0.819726
+ },
+ {
+  "text": " برمبت",
+  "startMs": 14580,
+  "endMs": 14980,
+  "timestampMs": 14640,
+  "confidence": 0.994704
+ },
+ {
+  "text": " يعني",
+  "startMs": 14980,
+  "endMs": 15300,
+  "timestampMs": 15200,
+  "confidence": 0.996765
+ },
+ {
+  "text": " السؤال",
+  "startMs": 15300,
+  "endMs": 15780,
+  "timestampMs": 15640,
+  "confidence": 0.997111
+ },
+ {
+  "text": " اللي",
+  "startMs": 15780,
+  "endMs": 16100,
+  "timestampMs": 16000,
+  "confidence": 0.99529
+ },
+ {
+  "text": " أنت",
+  "startMs": 16100,
+  "endMs": 16350,
+  "timestampMs": 16220,
+  "confidence": 0.639246
+ },
+ {
+  "text": " بتجهزه",
+  "startMs": 16350,
+  "endMs": 16920,
+  "timestampMs": 16400,
+  "confidence": 0.957949
+ },
+ {
+  "text": " النموذج",
+  "startMs": 16920,
+  "endMs": 17690,
+  "timestampMs": 17380,
+  "confidence": 0.994873
+ },
+ {
+  "text": " اللي",
+  "startMs": 17690,
+  "endMs": 18120,
+  "timestampMs": 17980,
+  "confidence": 0.999565
+ },
+ {
+  "text": " بيفكر",
+  "startMs": 18120,
+  "endMs": 18680,
+  "timestampMs": 18120,
+  "confidence": 0.998923
+ },
+ {
+  "text": " وبيجاوب",
+  "startMs": 18680,
+  "endMs": 19460,
+  "timestampMs": 18780,
+  "confidence": 0.857353
+ },
+ {
+  "text": " والبارسر",
+  "startMs": 19460,
+  "endMs": 20290,
+  "timestampMs": 19960,
+  "confidence": 0.997109
+ },
+ {
+  "text": " اللي",
+  "startMs": 20290,
+  "endMs": 20710,
+  "timestampMs": 20800,
+  "confidence": 0.999933
+ },
+ {
+  "text": " بيرتب",
+  "startMs": 20710,
+  "endMs": 21220,
+  "timestampMs": 20960,
+  "confidence": 0.999291
+ },
+ {
+  "text": " إليك",
+  "startMs": 21220,
+  "endMs": 21630,
+  "timestampMs": 21520,
+  "confidence": 0.961344
+ },
+ {
+  "text": " الجواب",
+  "startMs": 21630,
+  "endMs": 22360,
+  "timestampMs": 22080,
+  "confidence": 0.998656
+ },
+ {
+  "text": " وأنا",
+  "startMs": 22360,
+  "endMs": 22840,
+  "timestampMs": 23300,
+  "confidence": 0.820445
+ },
+ {
+  "text": " كنت",
+  "startMs": 22840,
+  "endMs": 23180,
+  "timestampMs": 23600,
+  "confidence": 0.999565
+ },
+ {
+  "text": " أربطهم",
+  "startMs": 23180,
+  "endMs": 23920,
+  "timestampMs": 23820,
+  "confidence": 0.999834
+ },
+ {
+  "text": " ببعضي",
+  "startMs": 23920,
+  "endMs": 24520,
+  "timestampMs": 24300,
+  "confidence": 0.998612
+ },
+ {
+  "text": " دويا",
+  "startMs": 24520,
+  "endMs": 25100,
+  "timestampMs": 24760,
+  "confidence": 0.995849
+ },
+ {
+  "text": " زي",
+  "startMs": 25100,
+  "endMs": 25260,
+  "timestampMs": 25320,
+  "confidence": 0.357781
+ },
+ {
+  "text": " اللي",
+  "startMs": 25260,
+  "endMs": 25590,
+  "timestampMs": 25500,
+  "confidence": 0.994825
+ },
+ {
+  "text": " بيصلح",
+  "startMs": 25590,
+  "endMs": 26040,
+  "timestampMs": 25640,
+  "confidence": 0.995408
+ },
+ {
+  "text": " أي",
+  "startMs": 26040,
+  "endMs": 26310,
+  "timestampMs": 26260,
+  "confidence": 0.931438
+ },
+ {
+  "text": " عطل",
+  "startMs": 26310,
+  "endMs": 26770,
+  "timestampMs": 26420,
+  "confidence": 0.999169
+ },
+ {
+  "text": " بشريط",
+  "startMs": 26770,
+  "endMs": 27190,
+  "timestampMs": 26800,
+  "confidence": 0.975119
+ },
+ {
+  "text": " لاصة",
+  "startMs": 27190,
+  "endMs": 27940,
+  "timestampMs": 27360,
+  "confidence": 0.90391
+ },
+ {
+  "text": " بمشي",
+  "startMs": 28020,
+  "endMs": 28500,
+  "timestampMs": 28060,
+  "confidence": 0.855605
+ },
+ {
+  "text": " الحال",
+  "startMs": 28500,
+  "endMs": 29220,
+  "timestampMs": 28560,
+  "confidence": 0.907288
+ },
+ {
+  "text": " بس",
+  "startMs": 29220,
+  "endMs": 29510,
+  "timestampMs": 29020,
+  "confidence": 0.986462
+ },
+ {
+  "text": " مش",
+  "startMs": 29510,
+  "endMs": 29800,
+  "timestampMs": 29720,
+  "confidence": 0.960272
+ },
+ {
+  "text": " مرتب",
+  "startMs": 29800,
+  "endMs": 30440,
+  "timestampMs": 29840,
+  "confidence": 0.663734
+ },
+ {
+  "text": " لانجدشين",
+  "startMs": 30440,
+  "endMs": 31230,
+  "timestampMs": 31180,
+  "confidence": 0.811584
+ },
+ {
+  "text": " بتقول",
+  "startMs": 31230,
+  "endMs": 31740,
+  "timestampMs": 31800,
+  "confidence": 0.971819
+ },
+ {
+  "text": " لك",
+  "startMs": 31740,
+  "endMs": 31940,
+  "timestampMs": 32120,
+  "confidence": 0.858203
+ },
+ {
+  "text": " فيه",
+  "startMs": 31940,
+  "endMs": 32240,
+  "timestampMs": 32340,
+  "confidence": 0.992919
+ },
+ {
+  "text": " طريقة",
+  "startMs": 32240,
+  "endMs": 32740,
+  "timestampMs": 32520,
+  "confidence": 0.999336
+ },
+ {
+  "text": " أسهل",
+  "startMs": 32740,
+  "endMs": 33180,
+  "timestampMs": 32920,
+  "confidence": 0.814128
+ },
+ {
+  "text": " اربطهم",
+  "startMs": 33180,
+  "endMs": 33920,
+  "timestampMs": 33340,
+  "confidence": 0.582976
+ },
+ {
+  "text": " بخط",
+  "startMs": 33920,
+  "endMs": 34280,
+  "timestampMs": 33820,
+  "confidence": 0.999674
+ },
+ {
+  "text": " برمبت",
+  "startMs": 34280,
+  "endMs": 34980,
+  "timestampMs": 34580,
+  "confidence": 0.969469
+ },
+ {
+  "text": " خط",
+  "startMs": 34980,
+  "endMs": 35250,
+  "timestampMs": 35180,
+  "confidence": 0.944824
+ },
+ {
+  "text": " نموذج",
+  "startMs": 35250,
+  "endMs": 35910,
+  "timestampMs": 35560,
+  "confidence": 0.998786
+ },
+ {
+  "text": " خط",
+  "startMs": 35910,
+  "endMs": 36210,
+  "timestampMs": 36180,
+  "confidence": 0.988787
+ },
+ {
+  "text": " بارسر",
+  "startMs": 36210,
+  "endMs": 36940,
+  "timestampMs": 36620,
+  "confidence": 0.995701
+ },
+ {
+  "text": " والخط",
+  "startMs": 36940,
+  "endMs": 37620,
+  "timestampMs": 37100,
+  "confidence": 0.993146
+ },
+ {
+  "text": " هذا",
+  "startMs": 37620,
+  "endMs": 38040,
+  "timestampMs": 37660,
+  "confidence": 0.98254
+ },
+ {
+  "text": " اسمه",
+  "startMs": 38040,
+  "endMs": 38580,
+  "timestampMs": 38060,
+  "confidence": 0.996523
+ },
+ {
+  "text": " بايب",
+  "startMs": 38580,
+  "endMs": 39180,
+  "timestampMs": 38940,
+  "confidence": 0.976557
+ },
+ {
+  "text": " زي",
+  "startMs": 39180,
+  "endMs": 39510,
+  "timestampMs": 39540,
+  "confidence": 0.617795
+ },
+ {
+  "text": " خط",
+  "startMs": 39510,
+  "endMs": 39620,
+  "timestampMs": 39700,
+  "confidence": 0.995357
+ },
+ {
+  "text": " الإنتاج",
+  "startMs": 39620,
+  "endMs": 40420,
+  "timestampMs": 39920,
+  "confidence": 0.569607
+ },
+ {
+  "text": " بالمصنع",
+  "startMs": 40420,
+  "endMs": 41260,
+  "timestampMs": 40740,
+  "confidence": 0.992629
+ },
+ {
+  "text": " كل",
+  "startMs": 41260,
+  "endMs": 41560,
+  "timestampMs": 41760,
+  "confidence": 0.994036
+ },
+ {
+  "text": " قطعة",
+  "startMs": 41560,
+  "endMs": 41920,
+  "timestampMs": 41900,
+  "confidence": 0.995435
+ },
+ {
+  "text": " بتسلم",
+  "startMs": 41920,
+  "endMs": 42470,
+  "timestampMs": 42200,
+  "confidence": 0.997499
+ },
+ {
+  "text": " اللي",
+  "startMs": 42470,
+  "endMs": 42910,
+  "timestampMs": 42940,
+  "confidence": 0.999133
+ },
+ {
+  "text": " بعدها",
+  "startMs": 42910,
+  "endMs": 43500,
+  "timestampMs": 43240,
+  "confidence": 0.998932
+ },
+ {
+  "text": " تعالوا",
+  "startMs": 43500,
+  "endMs": 44360,
+  "timestampMs": 44880,
+  "confidence": 0.998418
+ },
+ {
+  "text": " نشوف",
+  "startMs": 44360,
+  "endMs": 44940,
+  "timestampMs": 45100,
+  "confidence": 0.977892
+ },
+ {
+  "text": " عملي",
+  "startMs": 44940,
+  "endMs": 45580,
+  "timestampMs": 45360,
+  "confidence": 0.997948
+ },
+ {
+  "text": " بفتح",
+  "startMs": 45580,
+  "endMs": 46500,
+  "timestampMs": 46100,
+  "confidence": 0.990314
+ },
+ {
+  "text": " VS",
+  "startMs": 46500,
+  "endMs": 46750,
+  "timestampMs": 47080,
+  "confidence": 0.627464
+ },
+ {
+  "text": " كود",
+  "startMs": 46750,
+  "endMs": 47500,
+  "timestampMs": 47320,
+  "confidence": 0.578461
+ },
+ {
+  "text": " وكتب",
+  "startMs": 47500,
+  "endMs": 48200,
+  "timestampMs": 47880,
+  "confidence": 0.693891
+ },
+ {
+  "text": " سلسلة",
+  "startMs": 48200,
+  "endMs": 48760,
+  "timestampMs": 48360,
+  "confidence": 0.994328
+ },
+ {
+  "text": " بسطر",
+  "startMs": 48760,
+  "endMs": 49320,
+  "timestampMs": 49260,
+  "confidence": 0.955236
+ },
+ {
+  "text": " واحد",
+  "startMs": 49320,
+  "endMs": 49940,
+  "timestampMs": 49700,
+  "confidence": 0.997832
+ },
+ {
+  "text": " قالب",
+  "startMs": 49940,
+  "endMs": 50600,
+  "timestampMs": 51240,
+  "confidence": 0.968093
+ },
+ {
+  "text": " بقول",
+  "startMs": 50600,
+  "endMs": 51250,
+  "timestampMs": 51500,
+  "confidence": 0.997697
+ },
+ {
+  "text": " لخص",
+  "startMs": 51250,
+  "endMs": 51740,
+  "timestampMs": 51900,
+  "confidence": 0.99775
+ },
+ {
+  "text": " الناس",
+  "startMs": 51740,
+  "endMs": 52570,
+  "timestampMs": 53000,
+  "confidence": 0.902565
+ },
+ {
+  "text": " بثلاثة",
+  "startMs": 52570,
+  "endMs": 53530,
+  "timestampMs": 53340,
+  "confidence": 0.999112
+ },
+ {
+  "text": " نقاط",
+  "startMs": 53530,
+  "endMs": 54300,
+  "timestampMs": 53980,
+  "confidence": 0.992447
+ },
+ {
+  "text": " بعدها",
+  "startMs": 54300,
+  "endMs": 54900,
+  "timestampMs": 55060,
+  "confidence": 0.98466
+ },
+ {
+  "text": " النموذج",
+  "startMs": 54900,
+  "endMs": 55740,
+  "timestampMs": 55480,
+  "confidence": 0.998245
+ },
+ {
+  "text": " وبعدها",
+  "startMs": 55740,
+  "endMs": 56460,
+  "timestampMs": 56360,
+  "confidence": 0.973597
+ },
+ {
+  "text": " البارسر",
+  "startMs": 56460,
+  "endMs": 57380,
+  "timestampMs": 57020,
+  "confidence": 0.987805
+ },
+ {
+  "text": " بشغل",
+  "startMs": 57690,
+  "endMs": 60010,
+  "timestampMs": 61560,
+  "confidence": 0.815912
+ },
+ {
+  "text": " الملف",
+  "startMs": 60010,
+  "endMs": 62350,
+  "timestampMs": 62060,
+  "confidence": 0.973967
+ },
+ {
+  "text": " التيرمينال",
+  "startMs": 62350,
+  "endMs": 63020,
+  "timestampMs": 62520,
+  "confidence": 0.660198
+ },
+ {
+  "text": " طلب",
+  "startMs": 63020,
+  "endMs": 63620,
+  "timestampMs": 63440,
+  "confidence": 0.676022
+ },
+ {
+  "text": " الثلاثة",
+  "startMs": 63620,
+  "endMs": 64210,
+  "timestampMs": 63800,
+  "confidence": 0.296589
+ },
+ {
+  "text": " نقاط",
+  "startMs": 64210,
+  "endMs": 64580,
+  "timestampMs": 64280,
+  "confidence": 0.986073
+ },
+ {
+  "text": " اطلعوا",
+  "startMs": 64580,
+  "endMs": 65020,
+  "timestampMs": 64680,
+  "confidence": 0.484202
+ },
+ {
+  "text": " لي",
+  "startMs": 65020,
+  "endMs": 65220,
+  "timestampMs": 65200,
+  "confidence": 0.989433
+ },
+ {
+  "text": " ثلاثة",
+  "startMs": 65220,
+  "endMs": 65830,
+  "timestampMs": 66020,
+  "confidence": 0.92113
+ },
+ {
+  "text": " نقاط",
+  "startMs": 65830,
+  "endMs": 66380,
+  "timestampMs": 66540,
+  "confidence": 0.995282
+ },
+ {
+  "text": " مرتبة",
+  "startMs": 66380,
+  "endMs": 67380,
+  "timestampMs": 66900,
+  "confidence": 0.9336
+ },
+ {
+  "text": " بس",
+  "startMs": 67380,
+  "endMs": 67680,
+  "timestampMs": 67760,
+  "confidence": 0.968962
+ },
+ {
+  "text": " قبلها",
+  "startMs": 67680,
+  "endMs": 68170,
+  "timestampMs": 68040,
+  "confidence": 0.998353
+ },
+ {
+  "text": " النموذج",
+  "startMs": 68170,
+  "endMs": 69010,
+  "timestampMs": 68540,
+  "confidence": 0.979262
+ },
+ {
+  "text": " اعتذر",
+  "startMs": 69010,
+  "endMs": 69500,
+  "timestampMs": 69120,
+  "confidence": 0.926724
+ },
+ {
+  "text": " عن",
+  "startMs": 69500,
+  "endMs": 69710,
+  "timestampMs": 69720,
+  "confidence": 0.988572
+ },
+ {
+  "text": " خطأ",
+  "startMs": 69710,
+  "endMs": 70010,
+  "timestampMs": 69860,
+  "confidence": 0.99444
+ },
+ {
+  "text": " ما",
+  "startMs": 70010,
+  "endMs": 70260,
+  "timestampMs": 70240,
+  "confidence": 0.970718
+ },
+ {
+  "text": " صار",
+  "startMs": 70260,
+  "endMs": 70410,
+  "timestampMs": 70400,
+  "confidence": 0.897538
+ },
+ {
+  "text": " أصلا",
+  "startMs": 70410,
+  "endMs": 70960,
+  "timestampMs": 70640,
+  "confidence": 0.914769
+ },
+ {
+  "text": " مؤدد",
+  "startMs": 70960,
+  "endMs": 71440,
+  "timestampMs": 71900,
+  "confidence": 0.885436
+ },
+ {
+  "text": " بزياد",
+  "startMs": 71440,
+  "endMs": 72040,
+  "timestampMs": 72300,
+  "confidence": 0.810967
+ },
+ {
+  "text": " عن",
+  "startMs": 72040,
+  "endMs": 72300,
+  "timestampMs": 72680,
+  "confidence": 0.965933
+ },
+ {
+  "text": " اللزوم",
+  "startMs": 72300,
+  "endMs": 73120,
+  "timestampMs": 72820,
+  "confidence": 0.995557
+ },
+ {
+  "text": " واذا",
+  "startMs": 73200,
+  "endMs": 73540,
+  "timestampMs": 73780,
+  "confidence": 0.772104
+ },
+ {
+  "text": " بدي",
+  "startMs": 73540,
+  "endMs": 73860,
+  "timestampMs": 74040,
+  "confidence": 0.78596
+ },
+ {
+  "text": " الجواب",
+  "startMs": 73860,
+  "endMs": 74490,
+  "timestampMs": 74440,
+  "confidence": 0.9801
+ },
+ {
+  "text": " يطلع",
+  "startMs": 74490,
+  "endMs": 74900,
+  "timestampMs": 74740,
+  "confidence": 0.95091
+ },
+ {
+  "text": " كلمة",
+  "startMs": 74900,
+  "endMs": 75320,
+  "timestampMs": 75140,
+  "confidence": 0.981415
+ },
+ {
+  "text": " كلمة",
+  "startMs": 75320,
+  "endMs": 75860,
+  "timestampMs": 75520,
+  "confidence": 0.969971
+ },
+ {
+  "text": " بغير",
+  "startMs": 75860,
+  "endMs": 76420,
+  "timestampMs": 76020,
+  "confidence": 0.903538
+ },
+ {
+  "text": " انفو",
+  "startMs": 76420,
+  "endMs": 76620,
+  "timestampMs": 76640,
+  "confidence": 0.458782
+ },
+ {
+  "text": " كلاستريم",
+  "startMs": 76620,
+  "endMs": 77120,
+  "timestampMs": 76940,
+  "confidence": 0.25257
+ },
+ {
+  "text": " والكود",
+  "startMs": 77120,
+  "endMs": 78340,
+  "timestampMs": 78080,
+  "confidence": 0.814751
+ },
+ {
+  "text": " كله",
+  "startMs": 78340,
+  "endMs": 78760,
+  "timestampMs": 78740,
+  "confidence": 0.964309
+ },
+ {
+  "text": " أكثر",
+  "startMs": 78760,
+  "endMs": 79090,
+  "timestampMs": 78960,
+  "confidence": 0.716983
+ },
+ {
+  "text": " من",
+  "startMs": 79090,
+  "endMs": 79310,
+  "timestampMs": 79360,
+  "confidence": 0.96746
+ },
+ {
+  "text": " رسالة",
+  "startMs": 79310,
+  "endMs": 79890,
+  "timestampMs": 79520,
+  "confidence": 0.977222
+ },
+ {
+  "text": " واتصاب",
+  "startMs": 79890,
+  "endMs": 80320,
+  "timestampMs": 79960,
+  "confidence": 0.671257
+ },
+ {
+  "text": " عديد",
+  "startMs": 80320,
+  "endMs": 80320,
+  "timestampMs": 80300,
+  "confidence": 0.598388
+ },
+ {
+  "text": " الفكرة",
+  "startMs": 80620,
+  "endMs": 81070,
+  "timestampMs": 82040,
+  "confidence": 0.319459
+ },
+ {
+  "text": " اللي",
+  "startMs": 81070,
+  "endMs": 81570,
+  "timestampMs": 82380,
+  "confidence": 0.812414
+ },
+ {
+  "text": " لازم",
+  "startMs": 81570,
+  "endMs": 82060,
+  "timestampMs": 82540,
+  "confidence": 0.898821
+ },
+ {
+  "text": " انت",
+  "startMs": 82060,
+  "endMs": 82430,
+  "timestampMs": 82880,
+  "confidence": 0.763458
+ },
+ {
+  "text": " تطلع",
+  "startMs": 82430,
+  "endMs": 82950,
+  "timestampMs": 83040,
+  "confidence": 0.945486
+ },
+ {
+  "text": " فيها",
+  "startMs": 82950,
+  "endMs": 83520,
+  "timestampMs": 83400,
+  "confidence": 0.931136
+ },
+ {
+  "text": " لا",
+  "startMs": 83520,
+  "endMs": 83750,
+  "timestampMs": 84000,
+  "confidence": 0.699418
+ },
+ {
+  "text": " تربط",
+  "startMs": 83750,
+  "endMs": 84060,
+  "timestampMs": 84100,
+  "confidence": 0.997821
+ },
+ {
+  "text": " الأشياء",
+  "startMs": 84060,
+  "endMs": 84730,
+  "timestampMs": 84460,
+  "confidence": 0.624876
+ },
+ {
+  "text": " ببعض",
+  "startMs": 84730,
+  "endMs": 85120,
+  "timestampMs": 84840,
+  "confidence": 0.961095
+ },
+ {
+  "text": " ضدويا",
+  "startMs": 85120,
+  "endMs": 85760,
+  "timestampMs": 85240,
+  "confidence": 0.699273
+ },
+ {
+  "text": " ركب",
+  "startMs": 85760,
+  "endMs": 86220,
+  "timestampMs": 86240,
+  "confidence": 0.971609
+ },
+ {
+  "text": " قطع",
+  "startMs": 86220,
+  "endMs": 86680,
+  "timestampMs": 86740,
+  "confidence": 0.656449
+ },
+ {
+  "text": " جاهزة",
+  "startMs": 86680,
+  "endMs": 87520,
+  "timestampMs": 87100,
+  "confidence": 0.994512
+ },
+ {
+  "text": " وخليها",
+  "startMs": 87520,
+  "endMs": 88390,
+  "timestampMs": 87560,
+  "confidence": 0.767623
+ },
+ {
+  "text": " تمشي",
+  "startMs": 88390,
+  "endMs": 88620,
+  "timestampMs": 88180,
+  "confidence": 0.865975
+ },
+ {
+  "text": " وراء",
+  "startMs": 88620,
+  "endMs": 89190,
+  "timestampMs": 88780,
+  "confidence": 0.876968
+ },
+ {
+  "text": " بعض",
+  "startMs": 89190,
+  "endMs": 89520,
+  "timestampMs": 89300,
+  "confidence": 0.965758
+ },
+ {
+  "text": " طبعا",
+  "startMs": 89520,
+  "endMs": 91320,
+  "timestampMs": 91180,
+  "confidence": 0.590481
+ },
+ {
+  "text": " الكود",
+  "startMs": 91320,
+  "endMs": 91890,
+  "timestampMs": 91560,
+  "confidence": 0.695725
+ },
+ {
+  "text": " كامل",
+  "startMs": 91890,
+  "endMs": 92340,
+  "timestampMs": 92060,
+  "confidence": 0.941871
+ },
+ {
+  "text": " على",
+  "startMs": 92340,
+  "endMs": 92680,
+  "timestampMs": 92600,
+  "confidence": 0.923928
+ },
+ {
+  "text": " القتهاب",
+  "startMs": 92680,
+  "endMs": 93520,
+  "timestampMs": 92920,
+  "confidence": 0.439109
+ },
+ {
+  "text": " والرابط",
+  "startMs": 93520,
+  "endMs": 94010,
+  "timestampMs": 93380,
+  "confidence": 0.738235
+ },
+ {
+  "text": " بأول",
+  "startMs": 94010,
+  "endMs": 94320,
+  "timestampMs": 93880,
+  "confidence": 0.956723
+ },
+ {
+  "text": " تعليق",
+  "startMs": 94320,
+  "endMs": 94320,
+  "timestampMs": 94300,
+  "confidence": 0.951645
+ },
+ {
+  "text": " وانت",
+  "startMs": 94320,
+  "endMs": 94810,
+  "timestampMs": 95000,
+  "confidence": 0.75937
+ },
+ {
+  "text": " شو",
+  "startMs": 94810,
+  "endMs": 95050,
+  "timestampMs": 95560,
+  "confidence": 0.89521
+ },
+ {
+  "text": " أول",
+  "startMs": 95050,
+  "endMs": 95420,
+  "timestampMs": 95820,
+  "confidence": 0.683385
+ },
+ {
+  "text": " شي",
+  "startMs": 95420,
+  "endMs": 95670,
+  "timestampMs": 96180,
+  "confidence": 0.951088
+ },
+ {
+  "text": " ممكن",
+  "startMs": 95670,
+  "endMs": 96160,
+  "timestampMs": 96360,
+  "confidence": 0.873347
+ },
+ {
+  "text": " تبني",
+  "startMs": 96160,
+  "endMs": 96660,
+  "timestampMs": 96780,
+  "confidence": 0.957246
+ },
+ {
+  "text": " بسلسلة",
+  "startMs": 96660,
+  "endMs": 97520,
+  "timestampMs": 97140,
+  "confidence": 0.914138
+ },
+ {
+  "text": " زي",
+  "startMs": 97520,
+  "endMs": 97830,
+  "timestampMs": 97700,
+  "confidence": 0.895623
+ },
+ {
+  "text": " هاي",
+  "startMs": 97830,
+  "endMs": 98320,
+  "timestampMs": 97960,
+  "confidence": 0.914002
+ },
+ {
+  "text": " اكتب",
+  "startMs": 98320,
+  "endMs": 98630,
+  "timestampMs": 98580,
+  "confidence": 0.810919
+ },
+ {
+  "text": " لي",
+  "startMs": 98630,
+  "endMs": 98750,
+  "timestampMs": 98860,
+  "confidence": 0.72559
+ },
+ {
+  "text": " بالتعليقات",
+  "startMs": 98750,
+  "endMs": 99520,
+  "timestampMs": 99020,
+  "confidence": 0.95395
+ },
+ {
+  "text": " وتبعني",
+  "startMs": 99520,
+  "endMs": 100890,
+  "timestampMs": 99680,
+  "confidence": 0.874186
+ },
+ {
+  "text": " لانه",
+  "startMs": 100890,
+  "endMs": 101520,
+  "timestampMs": 100740,
+  "confidence": 0.633935
+ },
+ {
+  "text": " بكرا",
+  "startMs": 101520,
+  "endMs": 101760,
+  "timestampMs": 101160,
+  "confidence": 0.922888
+ },
+ {
+  "text": " بنعلم",
+  "startMs": 101760,
+  "endMs": 102060,
+  "timestampMs": 101880,
+  "confidence": 0.81601
+ },
+ {
+  "text": " النموذج",
+  "startMs": 102060,
+  "endMs": 102640,
+  "timestampMs": 102360,
+  "confidence": 0.894145
+ },
+ {
+  "text": " يحكي",
+  "startMs": 102640,
+  "endMs": 102970,
+  "timestampMs": 102800,
+  "confidence": 0.436144
+ },
+ {
+  "text": " بثلاثة",
+  "startMs": 102970,
+  "endMs": 103640,
+  "timestampMs": 103240,
+  "confidence": 0.975996
+ },
+ {
+  "text": " لهجات",
+  "startMs": 103640,
+  "endMs": 104320,
+  "timestampMs": 103860,
+  "confidence": 0.966034
+ },
+ {
+  "text": " يالله",
+  "startMs": 104410,
+  "endMs": 105270,
+  "timestampMs": 104960,
+  "confidence": 0.663541
+ },
+ {
+  "text": " سلام",
+  "startMs": 105270,
+  "endMs": 105760,
+  "timestampMs": 105600,
+  "confidence": 0.638784
+ }
+]
