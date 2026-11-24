@@ -1,0 +1,27 @@
+{
+  "name": "portfolio-video",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "sounds": "bash scripts/make_sounds.sh"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.546",
+    "@remotion/google-fonts": "4.0.546",
+    "@remotion/media": "4.0.546",
+    "@remotion/media-utils": "4.0.546",
+    "@remotion/noise": "4.0.546",
+    "@remotion/paths": "4.0.546",
+    "@remotion/shapes": "4.0.546",
+    "@remotion/transitions": "4.0.546",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.546"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "typescript": "5.8.3"
+  }
+}
