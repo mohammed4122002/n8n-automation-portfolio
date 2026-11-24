@@ -7,7 +7,9 @@
     "render": "remotion render",
     "sounds": "bash scripts/make_sounds.sh",
     "sfx:remotion": "node scripts/fetch_remotion_sfx.mjs",
-    "postinstall": "node scripts/fetch_remotion_sfx.mjs || echo 'skipped remotion sfx download'"
+    "postinstall": "node scripts/fetch_remotion_sfx.mjs || echo 'skipped remotion sfx download'",
+    "voice": "bash scripts/voice_pipeline.sh",
+    "whisper:install": "node scripts/install_whisper.mjs"
   },
   "dependencies": {
     "@remotion/captions": "4.0.546",
