@@ -5,15 +5,21 @@
   "scripts": {
     "studio": "remotion studio",
     "render": "remotion render",
-    "sounds": "bash scripts/make_sounds.sh"
+    "sounds": "bash scripts/make_sounds.sh",
+    "sfx:remotion": "node scripts/fetch_remotion_sfx.mjs",
+    "postinstall": "node scripts/fetch_remotion_sfx.mjs || echo 'skipped remotion sfx download'"
   },
   "dependencies": {
+    "@remotion/captions": "4.0.546",
     "@remotion/cli": "4.0.546",
     "@remotion/google-fonts": "4.0.546",
+    "@remotion/install-whisper-cpp": "4.0.546",
     "@remotion/media": "4.0.546",
+    "@remotion/media-parser": "4.0.546",
     "@remotion/media-utils": "4.0.546",
     "@remotion/noise": "4.0.546",
     "@remotion/paths": "4.0.546",
+    "@remotion/sfx": "4.0.546",
     "@remotion/shapes": "4.0.546",
     "@remotion/transitions": "4.0.546",
     "react": "19.1.0",
