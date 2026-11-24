@@ -2,3 +2,4 @@ node_modules/
 out/
 .remotion/
 public/sfx/remotion/
+public/voice/*.wav

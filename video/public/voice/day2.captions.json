@@ -1,0 +1,58 @@
+[
+ {
+  "text": " أهلاً",
+  "startMs": 200,
+  "endMs": 620,
+  "timestampMs": 410,
+  "confidence": 1
+ },
+ {
+  "text": " وسهلاً",
+  "startMs": 650,
+  "endMs": 1070,
+  "timestampMs": 860,
+  "confidence": 1
+ },
+ {
+  "text": " فيكم",
+  "startMs": 1100,
+  "endMs": 1520,
+  "timestampMs": 1310,
+  "confidence": 1
+ },
+ {
+  "text": " باليوم",
+  "startMs": 1550,
+  "endMs": 1970,
+  "timestampMs": 1760,
+  "confidence": 1
+ },
+ {
+  "text": " الثاني",
+  "startMs": 2000,
+  "endMs": 2420,
+  "timestampMs": 2210,
+  "confidence": 1
+ },
+ {
+  "text": " من",
+  "startMs": 2450,
+  "endMs": 2870,
+  "timestampMs": 2660,
+  "confidence": 1
+ },
+ {
+  "text": " سلسلة",
+  "startMs": 2900,
+  "endMs": 3320,
+  "timestampMs": 3110,
+  "confidence": 1
+ },
+ {
+  "text": " الأتمتة",
+  "startMs": 3350,
+  "endMs": 3770,
+  "timestampMs": 3560,
+  "confidence": 1
+ }
+]
